@@ -243,12 +243,31 @@ impl EditorView {
                     let ghost_style = theme
                         .get("ui.virtual.inlay-hint")
                         .add_modifier(Modifier::DIM);
-                    for (i, ch) in ghost.display_text.chars().enumerate() {
-                        let x = screen_x + i as u16;
-                        if x >= inner.right() {
+                    for (line_idx, ghost_line) in ghost.display_text.lines().enumerate() {
+                        let y = screen_y + line_idx as u16;
+                        if y >= inner.bottom() {
                             break;
                         }
-                        surface[(x, screen_y)].set_char(ch).set_style(ghost_style);
+
+                        let start_x = if line_idx == 0 {
+                            screen_x
+                        } else {
+                            inner.left()
+                                + ghost_line
+                                    .chars()
+                                    .take_while(|ch| ch.is_whitespace())
+                                    .count()
+                                    .saturating_sub(view_offset.horizontal_offset as usize)
+                                    as u16
+                        };
+
+                        for (i, ch) in ghost_line.chars().enumerate() {
+                            let x = start_x + i as u16;
+                            if x >= inner.right() {
+                                break;
+                            }
+                            surface[(x, y)].set_char(ch).set_style(ghost_style);
+                        }
                     }
                 }
             }

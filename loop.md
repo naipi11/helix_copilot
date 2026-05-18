@@ -84,6 +84,26 @@
   - 已提交本轮修复（当前 HEAD：`Drop stale inline completion responses`）。
   - push 需要 token，按要求跳过。
 
+## 本轮记录 — 2026-05-19 07:34 cron
+- 选择任务：多行 ghost text 支持（前三项核心问题已完成，本轮从下次启动任务中选择体验优化，不重复已做事项）。
+- 修改文件：
+  - `helix/helix-view/src/document.rs`
+    - `InlineCompletion::display_text` 语义从“首行文本”调整为“可多行展示文本”。
+    - `InlineCompletion::new` 保留完整 insert_text 作为 display_text，不再截断为第一行。
+  - `helix/helix-term/src/ui/editor.rs`
+    - ghost text 渲染从单行循环改为逐行渲染。
+    - 第一行仍从当前 cursor 后开始显示；后续行按建议文本自身缩进从 viewport 左侧显示。
+    - 渲染会在 viewport 底部/右侧截断，避免越界。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m41s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (e91e1d0f)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复（当前 HEAD：`Render multiline inline ghost text`）。
+  - push 需要 token，按要求跳过。
+
 ## 下次启动任务
-1. 多行 ghost text 支持。
-2. 进一步优化 inline completion 请求取消/节流策略。
+1. 进一步优化 inline completion 请求取消/节流策略。

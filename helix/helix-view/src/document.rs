@@ -234,7 +234,7 @@ pub struct Document {
 pub struct InlineCompletion {
     /// The text to insert when accepted.
     pub insert_text: String,
-    /// First line of the ghost text, shown dimmed after cursor.
+    /// Ghost text to show dimmed after cursor. May span multiple lines.
     pub display_text: String,
     /// Cursor position at which this ghost text was requested/applied.
     pub cursor: usize,
@@ -242,11 +242,7 @@ pub struct InlineCompletion {
 
 impl InlineCompletion {
     pub fn new(insert_text: String, cursor: usize) -> Self {
-        let display = insert_text
-            .lines()
-            .next()
-            .unwrap_or(&insert_text)
-            .to_string();
+        let display = insert_text.clone();
         Self {
             insert_text,
             display_text: display,
