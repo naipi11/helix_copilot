@@ -5455,7 +5455,11 @@ pub fn ghost_text_accept(cx: &mut Context) {
     };
     // Insert the full ghost text at the cursor position
     use helix_core::Tendril;
-    let transaction = Transaction::insert(doc.text(), doc.selection(view.id), Tendril::from(ghost.insert_text.as_str()));
+    let transaction = Transaction::insert(
+        doc.text(),
+        doc.selection(view.id),
+        Tendril::from(ghost.insert_text.as_str()),
+    );
     doc.apply(&transaction, view.id);
 }
 

@@ -15,7 +15,8 @@ use crate::commands;
 use crate::compositor::Compositor;
 use crate::events::{OnModeSwitch, PostCommand, PostInsertChar};
 use crate::handlers::completion::request::{
-    request_incomplete_completion_list, request_inline_completion_from_servers, Trigger, TriggerKind,
+    request_incomplete_completion_list, request_inline_completion_from_servers, Trigger,
+    TriggerKind,
 };
 use crate::job::dispatch;
 use crate::keymap::MappableCommand;
@@ -217,10 +218,27 @@ fn clear_completions(cx: &mut commands::Context) {
     }))
 }
 
+fn clear_inline_completion_if_cursor_moved(cx: &mut commands::Context) {
+    let (view, doc) = current!(cx.editor);
+    let cursor = doc
+        .selection(view.id)
+        .primary()
+        .cursor(doc.text().slice(..));
+    if doc
+        .inline_completion
+        .as_ref()
+        .is_some_and(|ghost| ghost.cursor != cursor)
+    {
+        doc.inline_completion = None;
+    }
+}
+
 fn completion_post_command_hook(
     PostCommand { command, cx }: &mut PostCommand<'_, '_>,
 ) -> anyhow::Result<()> {
     if cx.editor.mode == Mode::Insert {
+        clear_inline_completion_if_cursor_moved(cx);
+
         if cx.editor.last_completion.is_some() {
             match command {
                 MappableCommand::Static {

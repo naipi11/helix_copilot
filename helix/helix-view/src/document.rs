@@ -236,10 +236,12 @@ pub struct InlineCompletion {
     pub insert_text: String,
     /// First line of the ghost text, shown dimmed after cursor.
     pub display_text: String,
+    /// Cursor position at which this ghost text was requested/applied.
+    pub cursor: usize,
 }
 
 impl InlineCompletion {
-    pub fn new(insert_text: String) -> Self {
+    pub fn new(insert_text: String, cursor: usize) -> Self {
         let display = insert_text
             .lines()
             .next()
@@ -248,6 +250,7 @@ impl InlineCompletion {
         Self {
             insert_text,
             display_text: display,
+            cursor,
         }
     }
 }

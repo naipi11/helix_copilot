@@ -217,10 +217,20 @@ impl EditorView {
             decorations,
         );
 
-        // GHOST TEXT: render inline completion after the cursor
+        // GHOST TEXT: render inline completion after the cursor.  If the
+        // cursor has moved since the inline completion was received, leave it
+        // hidden until the command hook clears the stale completion from the
+        // document; this prevents ghost text from visibly sticking to the new
+        // cursor position for one frame.
         if let Some(ref ghost) = doc.inline_completion {
             if editor.mode == Mode::Insert && is_focused {
-                let cursor = doc.selection(view.id).primary().cursor(doc.text().slice(..));
+                let cursor = doc
+                    .selection(view.id)
+                    .primary()
+                    .cursor(doc.text().slice(..));
+                if ghost.cursor != cursor {
+                    return;
+                }
                 let text = doc.text();
                 let line = text.char_to_line(cursor);
                 let line_start = text.line_to_byte(line);
@@ -238,9 +248,7 @@ impl EditorView {
                         if x >= inner.right() {
                             break;
                         }
-                        surface[(x, screen_y)]
-                            .set_char(ch)
-                            .set_style(ghost_style);
+                        surface[(x, screen_y)].set_char(ch).set_style(ghost_style);
                     }
                 }
             }

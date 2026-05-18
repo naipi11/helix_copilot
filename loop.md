@@ -40,7 +40,32 @@
   - 已提交本轮修复。
   - push 需要 token，按要求跳过。
 
+## 本轮记录 — 2026-05-19 06:25 cron
+- 选择任务：修复光标移动时 ghost text 残留。
+- 修改文件：
+  - `helix/helix-view/src/document.rs`
+    - `InlineCompletion` 增加 `cursor` 字段，记录 ghost text 对应的光标位置。
+    - `InlineCompletion::new` 签名同步为 `new(insert_text, cursor)`。
+  - `helix/helix-term/src/handlers/completion/request.rs`
+    - inline completion 响应落地时保存当前 cursor 到 `doc.inline_completion`。
+  - `helix/helix-term/src/handlers/completion.rs`
+    - 新增 `clear_inline_completion_if_cursor_moved`。
+    - 在 insert 模式 `PostCommand` hook 中检测当前 cursor，若与 ghost text 记录位置不同则清除 `doc.inline_completion`。
+  - `helix/helix-term/src/ui/editor.rs`
+    - 渲染 ghost text 前校验 `ghost.cursor == cursor`，防止移动光标后的 stale ghost text 在新位置闪现一帧。
+  - `helix/helix-term/src/commands.rs`
+    - `cargo fmt` 自动格式化了既有 `ghost_text_accept` 里的长行，无逻辑变化。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m40s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (95eed5ad)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复。
+  - push 需要 token，按要求跳过。
+
 ## 下次启动任务
-1. 修复光标移动时清除 ghost text。
-2. 多行 ghost text 支持。
-3. 优化 long-running ghost text 响应体验。
+1. 多行 ghost text 支持。
+2. 优化 long-running ghost text 响应体验。

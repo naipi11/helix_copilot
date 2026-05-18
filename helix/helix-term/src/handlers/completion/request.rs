@@ -340,7 +340,9 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
                     // Strip leading whitespace from prefix (indentation) since Copilot
                     // suggestions don't include leading whitespace
                     let trimmed_prefix = prefix.trim_start();
-                    let display_text = if insert_text.starts_with(trimmed_prefix) && trimmed_prefix.len() < insert_text.len() {
+                    let display_text = if insert_text.starts_with(trimmed_prefix)
+                        && trimmed_prefix.len() < insert_text.len()
+                    {
                         insert_text[trimmed_prefix.len()..].to_string()
                     } else if insert_text.starts_with(&prefix) && prefix.len() < insert_text.len() {
                         insert_text[prefix.len()..].to_string()
@@ -354,12 +356,11 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
                             return;
                         }
                     };
-                    doc.inline_completion = Some(
-                        helix_view::document::InlineCompletion {
-                            insert_text: insert_text,
-                            display_text: display_text,
-                        }
-                    );
+                    doc.inline_completion = Some(helix_view::document::InlineCompletion {
+                        insert_text: insert_text,
+                        display_text: display_text,
+                        cursor,
+                    });
                 })
                 .await;
             });
