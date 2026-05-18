@@ -1,0 +1,21 @@
+#本文件为项目开发计划书
+#项目目标
+该项目目的旨在开发一款适用于helix编辑器的AI插件，主要用来接入copilot，以达到在使用helix编辑器的时候能够实现AI自动补全
+#技术栈
+使用go语言开发，尽量在不修改helix源码的基础上实现此功能
+#验收标准
+可以实现在使用包管理器安装helix_copliot之后，能够在使用helix的基础上登录copilot账号以启用AI自动补全，能够在helix中通过
+：/model切换当前模型
+#项目资源
+**helix原项目地址**
+https://github.com/helix-editor/helix.git
+**helix软件官网**
+https://helix-editor.cn/
+**copilot官方文档**
+https://docs.github.com/zh/copilot
+#本项目仓库地址（初始为空）
+https://github.com/naipi11/helix_copilot.git
+**Token令牌**
+<GITHUB_TOKEN: 已移至本地环境，不写入仓库>
+#本token期限为30天，仅限于访问repo资源
+做好仓库管理，项目完成后编写一份完整清晰的README
