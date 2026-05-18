@@ -31,18 +31,18 @@ use crate::ui::editor::InsertEvent;
 use super::word;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub(super) enum TriggerKind {
+pub enum TriggerKind {
     Auto,
     TriggerChar,
     Manual,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(super) struct Trigger {
-    pub(super) pos: usize,
-    pub(super) view: ViewId,
-    pub(super) doc: DocumentId,
-    pub(super) kind: TriggerKind,
+pub struct Trigger {
+    pub pos: usize,
+    pub view: ViewId,
+    pub doc: DocumentId,
+    pub kind: TriggerKind,
 }
 
 #[derive(Debug)]

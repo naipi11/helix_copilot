@@ -14,7 +14,9 @@ use tokio::task::JoinSet;
 use crate::commands;
 use crate::compositor::Compositor;
 use crate::events::{OnModeSwitch, PostCommand, PostInsertChar};
-use crate::handlers::completion::request::{request_incomplete_completion_list, Trigger};
+use crate::handlers::completion::request::{
+    request_incomplete_completion_list, request_inline_completion_from_servers, Trigger, TriggerKind,
+};
 use crate::job::dispatch;
 use crate::keymap::MappableCommand;
 use crate::ui::lsp::signature_help::SignatureHelp;
@@ -121,12 +123,26 @@ pub fn trigger_auto_completion(editor: &Editor, trigger_char_only: bool) {
         return;
     }
     let (view, doc): (&helix_view::View, &helix_view::Document) = current_ref!(editor);
-    // Clear stale ghost text before re-requesting
-    if doc.inline_completion.is_some() {
-        // We can't mutate doc here, so we just proceed to request new completions
-    }
     let mut text = doc.text().slice(..);
     let cursor = doc.selection(view.id).primary().cursor(text);
+
+    // Ghost text must not depend on the normal completion handler: some language
+    // servers (notably Copilot in Python buffers) provide inline completion but no
+    // useful regular completion trigger. Fire the inline request directly on every
+    // auto-completion tick/post-insert path, while keeping the popup completion
+    // debounce below unchanged.
+    if !trigger_char_only {
+        request_inline_completion_from_servers(
+            editor,
+            Trigger {
+                pos: cursor,
+                doc: doc.id(),
+                view: view.id,
+                kind: TriggerKind::Auto,
+            },
+        );
+    }
+
     text = doc.text().slice(..cursor);
 
     let is_trigger_char = doc
