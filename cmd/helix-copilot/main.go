@@ -10,6 +10,7 @@ import (
 
 	"github.com/naipi11/helix_copilot/internal/config"
 	"github.com/naipi11/helix_copilot/internal/login"
+	"github.com/naipi11/helix_copilot/internal/lsp"
 )
 
 var stdout io.Writer = os.Stdout
@@ -127,7 +128,12 @@ func runLSP(args []string) int {
 		fmt.Fprintf(stderr, "unknown lsp option: %s\n", strings.Join(args, " "))
 		return 2
 	}
-	return runProxy(nil, "lsp", "--stdio")
+	proxy := lsp.NewProxy()
+	if err := proxy.Run(); err != nil {
+		fmt.Fprintf(stderr, "copilot lsp proxy: %v\n", err)
+		return 1
+	}
+	return 0
 }
 
 func runProxy(extra []string, subcommand string, more ...string) int {

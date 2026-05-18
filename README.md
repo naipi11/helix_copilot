@@ -2,14 +2,29 @@
 
 Helix Copilot 是一个轻量级命令行桥接器，用来把 GitHub Copilot language server 接入 Helix 的 LSP 配置，以便在 Helix 中使用 Copilot 代码补全能力。
 
-当前实现目标是最小可用原型：
+## 架构
 
-- 使用 Go 编写主程序。
+```
+Helix (hx)  ── stdin/stdout ──►  helix-copilot lsp (LSP 代理)
+                                         │
+                                   转译 completion ↔ inlineCompletion
+                                         │
+                                         ▼
+                              npx @github/copilot-language-server (--stdio)
+```
+
+Helix 发送 `textDocument/completion` 请求，桥接层自动转译为 Copilot 的 `textDocument/inlineCompletion`，并将结果转回标准 LSP CompletionItem 格式返回。
+
+当前实现功能：
+
+- 使用 Go 编写的 LSP 代理桥接程序。
 - 通过 `npx @github/copilot-language-server` 启动官方 Copilot language server。
 - 提供 `login` 命令触发 GitHub Copilot 设备登录流程。
 - 提供 `model` 命令保存当前模型选择。
 - 提供 `configure-helix` 命令生成 Helix `languages.toml` 片段。
 - 提供 `lsp` 命令作为 Helix language server 入口。
+- 支持 Copilot 官方支持的所有编程语言。
+
 
 ## 构建
 
@@ -109,13 +124,13 @@ go test ./...
 
 ## 当前限制
 
-- 这是不修改 Helix 源码的桥接方案，核心依赖 Helix 对 LSP completion / inline completion 能力的支持。
+- Copilot language server 使用 `textDocument/inlineCompletion`（LSP 3.18 提议特性），而 Helix 使用 `textDocument/completion`。本项目通过内置 LSP 代理进行双向协议转译，可能存在部分兼容性问题。
 - `:/model` 目前是 CLI 命令形式，不是 Helix 内部命令。
-- Copilot language server 的登录和补全协议由官方 npm 包负责，本项目只做轻量封装和 Helix 配置入口。
+- Copilot language server 的登录和补全协议由官方 npm 包负责，本项目只做轻量封装和协议转译。
 
 ## 开发计划
 
-1. 完善多语言 `languages.toml` 合并逻辑，避免覆盖用户现有配置。
-2. 增加安装脚本和包管理器发布配置。
-3. 验证 Helix 对 Copilot inline completion 的实际兼容性。
+1. 完善 `languages.toml` 合并逻辑，避免覆盖用户现有配置。
+2. 增加安装脚本和包管理器发布配置（Windows/Linux）。
+3. 优化 LSP 代理的兼容性和错误处理。
 4. 如果必须支持真正的 `:/model`，再评估是否维护 Helix patch 或上游插件接口。
