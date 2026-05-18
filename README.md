@@ -49,13 +49,12 @@ npm view @github/copilot-language-server version
 helix-copilot login
 ```
 
-该命令会代理调用：
+该命令会通过 LSP 调用 Copilot language server 的设备登录流程：
 
-```bash
-npx --yes @github/copilot-language-server login
-```
-
-按终端提示完成 GitHub Copilot 设备授权。
+1. 启动 `npx --yes @github/copilot-language-server --stdio`
+2. 发送 `signInInitiate` 请求
+3. 显示 GitHub 设备登录地址和设备码
+4. 网页授权后按 Enter，程序发送 `workspace/executeCommand` 执行 `github.copilot.finishDeviceFlow`
 
 ## 配置 Helix
 
