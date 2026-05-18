@@ -337,7 +337,12 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
                     let line = text.char_to_line(cursor);
                     let line_start = text.line_to_byte(line);
                     let prefix = text.slice(line_start..cursor).to_string();
-                    let display_text = if insert_text.starts_with(&prefix) && prefix.len() < insert_text.len() {
+                    // Strip leading whitespace from prefix (indentation) since Copilot
+                    // suggestions don't include leading whitespace
+                    let trimmed_prefix = prefix.trim_start();
+                    let display_text = if insert_text.starts_with(trimmed_prefix) && trimmed_prefix.len() < insert_text.len() {
+                        insert_text[trimmed_prefix.len()..].to_string()
+                    } else if insert_text.starts_with(&prefix) && prefix.len() < insert_text.len() {
                         insert_text[prefix.len()..].to_string()
                     } else {
                         // No prefix match: show full insert text (it replaces what's typed)
