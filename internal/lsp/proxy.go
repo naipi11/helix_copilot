@@ -163,22 +163,35 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 }
 
 func (p *Proxy) handleInitialize(msg []byte) error {
-	// Forward initialize to child
-	if err := writeLSP(p.childIn, msg); err != nil {
-		return err
+	// Inject editorInfo and editorPluginInfo into initializationOptions
+	// (Copilot LS requires these)
+	var req map[string]any
+	if err := json.Unmarshal(msg, &req); err == nil {
+		params, _ := req["params"].(map[string]any)
+		if params != nil {
+			initOpts, _ := params["initializationOptions"].(map[string]any)
+			if initOpts == nil {
+				initOpts = make(map[string]any)
+				params["initializationOptions"] = initOpts
+			}
+			if _, exists := initOpts["editorInfo"]; !exists {
+				initOpts["editorInfo"] = map[string]any{
+					"name":    "helix",
+					"version": "25.07.1",
+				}
+			}
+			if _, exists := initOpts["editorPluginInfo"]; !exists {
+				initOpts["editorPluginInfo"] = map[string]any{
+					"name":    "helix-copilot",
+					"version": "0.1.0",
+				}
+			}
+			modified, _ := json.Marshal(req)
+			return writeLSP(p.childIn, modified)
+		}
 	}
-	// Read the response from child
-	reader := bufio.NewReader(p.childOut)
-	resp, err := readLSP(reader)
-	if err != nil {
-		return fmt.Errorf("read initialize response: %w", err)
-	}
-	// Inject completionProvider, forward to helix
-	modified := injectCompletionProvider(resp)
-	if err := writeLSP(os.Stdout, modified); err != nil {
-		return err
-	}
-	return nil
+	// Fallback: forward as-is
+	return writeLSP(p.childIn, msg)
 }
 
 func (p *Proxy) handleCompletionRequest(msg []byte) error {
@@ -339,6 +352,10 @@ func injectCompletionProvider(msg []byte) []byte {
 			"triggerCharacters": []string{".", " "},
 			"resolveProvider":   false,
 		}
+	}
+	// Inject inline completion provider (for native ghost text support)
+	if _, exists := caps["inlineCompletionProvider"]; !exists {
+		caps["inlineCompletionProvider"] = map[string]any{}
 	}
 
 	data, _ := json.Marshal(resp)
