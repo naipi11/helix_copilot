@@ -340,8 +340,14 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
                     let display_text = if insert_text.starts_with(&prefix) && prefix.len() < insert_text.len() {
                         insert_text[prefix.len()..].to_string()
                     } else {
-                        // Fallback: use first line of insert_text
-                        insert_text.lines().next().unwrap_or(&insert_text).to_string()
+                        // No prefix match: show full insert text (it replaces what's typed)
+                        let first_line = insert_text.lines().next().unwrap_or(&insert_text);
+                        if first_line.len() < 120 {
+                            first_line.to_string()
+                        } else {
+                            doc.inline_completion = None;
+                            return;
+                        }
                     };
                     doc.inline_completion = Some(
                         helix_view::document::InlineCompletion {
