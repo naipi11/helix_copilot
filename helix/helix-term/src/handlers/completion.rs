@@ -121,6 +121,10 @@ pub fn trigger_auto_completion(editor: &Editor, trigger_char_only: bool) {
         return;
     }
     let (view, doc): (&helix_view::View, &helix_view::Document) = current_ref!(editor);
+    // Clear stale ghost text before re-requesting
+    if doc.inline_completion.is_some() {
+        // We can't mutate doc here, so we just proceed to request new completions
+    }
     let mut text = doc.text().slice(..);
     let cursor = doc.selection(view.id).primary().cursor(text);
     text = doc.text().slice(..cursor);
