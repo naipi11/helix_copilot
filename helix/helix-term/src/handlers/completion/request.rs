@@ -254,9 +254,6 @@ fn request_completions(
         requests.spawn_blocking(word_completion_request);
     }
 
-    // Also request inline completion (ghost text) from language servers that support it.
-    request_inline_completion_from_servers(editor, trigger);
-
     let ui = compositor.find::<ui::EditorView>().unwrap();
     ui.last_insert.1.push(InsertEvent::RequestCompletion);
     let handle_ = handle.clone();
@@ -293,11 +290,14 @@ fn request_completions(
 }
 
 /// Request inline completion (ghost text) from language servers that support it.
-pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger) {
+pub fn request_inline_completion_from_servers(editor: &Editor, trigger: Trigger) {
     let (view, doc) = current_ref!(editor);
     let text = doc.text();
     let cursor = doc.selection(view.id).primary().cursor(text.slice(..));
-    let current_view_id = view.id;
+
+    if trigger.view != view.id || trigger.doc != doc.id() || trigger.pos != cursor {
+        return;
+    }
 
     for ls in doc.language_servers() {
         let ls = ls;
@@ -309,7 +309,9 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
             continue;
         }
         let request = ls.inline_completion(doc_id, pos);
-        let view_id = current_view_id;
+        let view_id = trigger.view;
+        let doc_id = trigger.doc;
+        let request_cursor = trigger.pos;
         if let Some(fut) = request {
             tokio::spawn(async move {
                 let result: Option<lsp::InlineCompletionResponse> = fut
@@ -329,11 +331,20 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
                 };
                 let insert_text = first.insert_text;
                 dispatch(move |editor, _compositor| {
-                    let (_, doc) = current!(editor);
+                    if editor.mode != Mode::Insert {
+                        return;
+                    }
+                    let (view, doc) = current!(editor);
+                    if view.id != view_id || doc.id() != doc_id {
+                        return;
+                    }
                     let doc = &mut *doc;
                     // Compute display text: strip what the user already typed
                     let text = doc.text().slice(..);
                     let cursor = doc.selection(view_id).primary().cursor(text);
+                    if cursor != request_cursor {
+                        return;
+                    }
                     let line = text.char_to_line(cursor);
                     let line_start = text.line_to_byte(line);
                     let prefix = text.slice(line_start..cursor).to_string();

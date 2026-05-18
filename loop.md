@@ -66,6 +66,24 @@
   - 已提交本轮修复。
   - push 需要 token，按要求跳过。
 
+## 本轮记录 — 2026-05-19 06:56 cron
+- 选择任务：优化 long-running ghost text 响应体验（当前前三项中 Python 触发与光标移动残留已完成，转入体验/性能优化）。
+- 修改文件：
+  - `helix/helix-term/src/handlers/completion/request.rs`
+    - 移除普通 completion handler 中对 `request_inline_completion_from_servers` 的重复调用，避免 auto path + popup completion path 对同一光标位置发起双份 inline 请求。
+    - `request_inline_completion_from_servers` 现在使用传入的 `Trigger` 校验当前 view/doc/cursor，只有请求触发点仍然匹配时才发起请求。
+    - inline completion 异步响应落地前再次校验 insert 模式、当前 view/doc 和 cursor，过期响应直接丢弃，防止慢响应覆盖最新输入位置的 ghost text。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m38s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (93b26704)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复（当前 HEAD：`Drop stale inline completion responses`）。
+  - push 需要 token，按要求跳过。
+
 ## 下次启动任务
 1. 多行 ghost text 支持。
-2. 优化 long-running ghost text 响应体验。
+2. 进一步优化 inline completion 请求取消/节流策略。
