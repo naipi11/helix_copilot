@@ -1,5 +1,4 @@
-.tools/
-/helix/
+/.tools/
 /helix-copilot
 *.test
 .DS_Store

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-const DefaultModel = "gpt-4o-copilot"
+const DefaultModel = "gpt-5.4-mini"
 const DefaultLanguageServerPackage = "@github/copilot-language-server"
 
 type Config struct {

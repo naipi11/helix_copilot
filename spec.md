@@ -1,6 +1,10 @@
 #本文件用来规划项目具体实现细节
-1.本项目最终是要建立一个可通过包管理器在windows和linux进行安装的软件，在helix原来的基础上集成copilot，只需要实现AI
-代码自动补全即可，不需要实现大模型对话以及其它额外功能
-2.本项目运行需要登陆copilot账号，根据官方文档封装好接口以便于正常的copilot用户登录并使用AI功能
-3.在实现目标功能后也要保证软件的流畅运行，避免因为集成了copilot而导致的卡顿与bug，运行流畅度应与原版helix接近
-4.使用go语言编写主要程序，在保证软件轻量流畅的前提下可以使用python库来辅助编写一些脚本插件
+1. 本项目最终是要建立一个可通过包管理器在 Windows 和 Linux 进行安装的软件。
+2. 直接修改 Helix 源码，在 LSP 层实现 textDocument/inlineCompletion 请求/响应支持。
+3. 在 Helix UI 渲染层实现 ghost text（灰色幽灵字）显示。
+4. 支持 Copilot 设备登录流程，通过 LSP signInInitiate 协议完成 Copilot 账号登录。
+5. 打字时自动触发 ghost text 补全，按 Tab 接受、Esc 拒绝。
+6. 支持 :/model 命令切换当前 Copilot 模型（默认 GPT-5.4 mini）。
+7. 保持原版 Helix 的流畅度，避免卡顿。
+8. 支持 Copilot 官方支持的所有语言（C/C++/Go/Python/Rust/JS/TS 等）。
+9. Go 编写的 helix-copilot CLI 工具作为辅助（登录、模型管理、配置生成）。

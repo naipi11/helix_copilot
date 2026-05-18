@@ -1,11 +1,22 @@
 #本文件为项目开发计划书
+
 #项目目标
-该项目目的旨在开发一款适用于helix编辑器的AI插件，主要用来接入copilot，以达到在使用helix编辑器的时候能够实现AI自动补全
+在 Helix 编辑器原生实现 GitHub Copilot ghost text（幽灵字/行内补全），达到 VS Code 级别的体验。
+不再使用外挂桥接方案，而是直接修改 Helix 源码，在 LSP 层和 UI 渲染层原生支持 textDocument/inlineCompletion。
+
 #技术栈
-使用go语言开发，尽量在不修改helix源码的基础上实现此功能
+- Rust（修改 Helix 主程序）
+- Go（继续维护 helix-copilot CLI 工具：登录、模型切换、配置生成）
+- 直接修改 helix 源码，patch 官方仓库
+
 #验收标准
-可以实现在使用包管理器安装helix_copliot之后，能够在使用helix的基础上登录copilot账号以启用AI自动补全，能够在helix中通过
-：/model切换当前模型
+1. 在 Helix 中登录 Copilot 账号后，打字时自动出现灰色幽灵字建议（ghost text）
+2. 按 Tab 接受建议，按 Esc 拒绝
+3. 支持通过 :/model 切换当前模型
+4. 支持 Copilot 官方支持的所有语言
+5. 流畅度接近原版 Helix，不卡顿
+6. 可通过包管理器在 Windows/Linux 安装
+
 #项目资源
 **helix原项目地址**
 https://github.com/helix-editor/helix.git
@@ -13,9 +24,7 @@ https://github.com/helix-editor/helix.git
 https://helix-editor.cn/
 **copilot官方文档**
 https://docs.github.com/zh/copilot
-#本项目仓库地址（初始为空）
+**本项目仓库地址（初始为空）**
 https://github.com/naipi11/helix_copilot.git
-**Token令牌**
-<GITHUB_TOKEN: 已移至本地环境，不写入仓库>
 #本token期限为30天，仅限于访问repo资源
 做好仓库管理，项目完成后编写一份完整清晰的README
