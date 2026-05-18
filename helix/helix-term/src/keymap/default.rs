@@ -383,7 +383,6 @@ pub fn default() -> HashMap<Mode, KeyTrie> {
 
         "C-s" => commit_undo_checkpoint,
         "C-x" => completion,
-        "C-y" => ghost_text_accept,
         "C-r" => insert_register,
 
         "C-w" | "A-backspace" => delete_word_backward,
@@ -393,7 +392,7 @@ pub fn default() -> HashMap<Mode, KeyTrie> {
         "C-h" | "backspace" | "S-backspace" => delete_char_backward,
         "C-d" | "del" => delete_char_forward,
         "C-j" | "ret" => insert_newline,
-        "tab" => smart_tab,
+        "tab" => ghost_text_accept,
         "S-tab" => insert_tab,
 
         "up" => move_visual_line_up,

@@ -14,6 +14,11 @@
 8. ✅ Esc 退出插入模式时清除 ghost text
 9. ✅ 默认模型改为 gpt-5.4-mini
 10. ✅ 编译通过，二进制安装完毕
+11. ✅ Go 代理修复：
+    - 注入 inlineCompletionProvider 到 capabilities
+    - 注入 editorInfo + editorPluginInfo 到 init options
+    - 修复竞态条件：forwardChildToHelix 统一处理所有响应
+    - 测试验证通过：Copilot 返回 `println("Hello, World!")`
 
 ## 待办
 - [ ] 端到端测试：启动 hx，打开文件，确认 Copilot request 被发送

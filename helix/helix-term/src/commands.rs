@@ -5442,10 +5442,16 @@ pub fn completion(cx: &mut Context) {
 }
 
 /// Accept ghost text (inline completion) by inserting it into the document.
+/// If no ghost text is active, falls back to smart_tab (default Tab behavior).
 pub fn ghost_text_accept(cx: &mut Context) {
     let (view, doc) = current!(cx.editor);
+    if doc.inline_completion.is_none() {
+        // No ghost text → fall through to smart_tab
+        smart_tab(cx);
+        return;
+    }
     let Some(ghost) = doc.inline_completion.take() else {
-        return;  // No ghost text to accept
+        return;
     };
     // Insert the full ghost text at the cursor position
     use helix_core::Tendril;

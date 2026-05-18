@@ -297,6 +297,7 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
     let (view, doc) = current_ref!(editor);
     let text = doc.text();
     let cursor = doc.selection(view.id).primary().cursor(text.slice(..));
+    let current_view_id = view.id;
 
     for ls in doc.language_servers() {
         let ls = ls;
@@ -308,6 +309,7 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
             continue;
         }
         let request = ls.inline_completion(doc_id, pos);
+        let view_id = current_view_id;
         if let Some(fut) = request {
             tokio::spawn(async move {
                 let result: Option<lsp::InlineCompletionResponse> = fut
@@ -329,8 +331,23 @@ pub fn request_inline_completion_from_servers(editor: &Editor, _trigger: Trigger
                 dispatch(move |editor, _compositor| {
                     let (_, doc) = current!(editor);
                     let doc = &mut *doc;
+                    // Compute display text: strip what the user already typed
+                    let text = doc.text().slice(..);
+                    let cursor = doc.selection(view_id).primary().cursor(text);
+                    let line = text.char_to_line(cursor);
+                    let line_start = text.line_to_byte(line);
+                    let prefix = text.slice(line_start..cursor).to_string();
+                    let display_text = if insert_text.starts_with(&prefix) && prefix.len() < insert_text.len() {
+                        insert_text[prefix.len()..].to_string()
+                    } else {
+                        // Fallback: use first line of insert_text
+                        insert_text.lines().next().unwrap_or(&insert_text).to_string()
+                    };
                     doc.inline_completion = Some(
-                        helix_view::document::InlineCompletion::new(insert_text)
+                        helix_view::document::InlineCompletion {
+                            insert_text: insert_text,
+                            display_text: display_text,
+                        }
                     );
                 })
                 .await;
