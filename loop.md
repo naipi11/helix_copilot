@@ -226,3 +226,21 @@
 - Git：
   - 已提交本轮修复（当前 HEAD：`Render ghost text with unicode width handling`）。
   - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 13:11 cron
+- 选择任务：优化 ghost text 接受体验；前三项核心触发/残留问题和近期渲染优化已完成，本轮只修 Tab 接受 stale ghost text 的窄窗口问题。
+- 修改文件：
+  - `helix/helix-term/src/commands.rs`
+    - `ghost_text_accept` 在取出 inline completion 后立即校验 `ghost.cursor == cursor`。
+    - 如果光标已经移动、command hook 尚未来得及清掉 stale ghost text，则不再接受这条不可见/过期建议。
+    - stale 情况下清掉旧 ghost text 并 fallback 到 `smart_tab(cx)`，避免 Tab 把旧 Copilot 内容插入到错误位置。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m14s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (fa1bcdb9)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复（当前 HEAD：`Ignore stale ghost text on accept`）。
+  - push 需要 token，按要求跳过。

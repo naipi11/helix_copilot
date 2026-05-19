@@ -5453,13 +5453,21 @@ pub fn ghost_text_accept(cx: &mut Context) {
     let Some(ghost) = doc.inline_completion.take() else {
         return;
     };
+    let text = doc.text().slice(..);
+    let cursor = doc.selection(view.id).primary().cursor(text);
+    if ghost.cursor != cursor {
+        // The render path hides stale ghost text when the cursor moves, but the
+        // command hook may not have cleared it yet.  Treat Tab as a normal Tab
+        // in that narrow window instead of accepting an invisible/stale
+        // completion at the wrong position.
+        smart_tab(cx);
+        return;
+    }
     // Replace the already typed current-line prefix with the full completion text.
     // Copilot usually returns the whole completed expression, while the rendered ghost
     // text only shows the suffix.  Accepting must therefore replace the visible prefix
     // instead of inserting the whole text at the cursor and duplicating it.
     use helix_core::Tendril;
-    let text = doc.text().slice(..);
-    let cursor = doc.selection(view.id).primary().cursor(text);
     let line = text.char_to_line(cursor);
     let line_start = text.line_to_char(line);
     let prefix = text.slice(line_start..cursor).to_string();
