@@ -289,21 +289,42 @@ fn request_completions(
     tokio::spawn(cancelable_future(request_completions, handle));
 }
 
-/// Request inline completion (ghost text) from language servers that support it.
+const INLINE_COMPLETION_DEBOUNCE: Duration = Duration::from_millis(75);
+
+/// Debounce and request inline completion (ghost text) from language servers that support it.
 pub fn request_inline_completion_from_servers(editor: &mut Editor, trigger: Trigger) {
-    let (view, doc) = current_ref!(editor);
-    let text = doc.text();
-    let cursor = doc.selection(view.id).primary().cursor(text.slice(..));
-
-    if trigger.view != view.id || trigger.doc != doc.id() || trigger.pos != cursor {
-        return;
-    }
-
     let handle = editor
         .handlers
         .completions
         .inline_request_controller
         .restart();
+
+    let request_handle = handle.clone();
+    let debounce_inline_completion = async move {
+        tokio::time::sleep(INLINE_COMPLETION_DEBOUNCE).await;
+        dispatch_blocking(move |editor, _compositor| {
+            request_inline_completion_from_servers_now(editor, trigger, request_handle)
+        });
+    };
+    tokio::spawn(cancelable_future(debounce_inline_completion, handle));
+}
+
+fn request_inline_completion_from_servers_now(
+    editor: &mut Editor,
+    trigger: Trigger,
+    handle: TaskHandle,
+) {
+    let (view, doc) = current_ref!(editor);
+    let text = doc.text();
+    let cursor = doc.selection(view.id).primary().cursor(text.slice(..));
+
+    if handle.is_canceled()
+        || trigger.view != view.id
+        || trigger.doc != doc.id()
+        || trigger.pos != cursor
+    {
+        return;
+    }
 
     for ls in doc.language_servers() {
         let ls = ls;
