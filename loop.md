@@ -5,7 +5,7 @@
 - 触发逻辑：随 `trigger_auto_completion` 自动触发；inline completion 现在有独立触发路径，不再依赖普通 completion handler 命中
 - 接受：Tab（无 ghost text 时 fallback 到 smart_tab）
 - 拒绝：Esc
-- 已构建并安装：`~/.local/bin/hx` → helix 25.07.1 (179bcadf)
+- 已构建并安装：`~/.local/bin/hx` → helix 25.07.1 (84bc5d2c)
 
 ## 已知问题
 1. **前缀匹配含缩进** → ✅ 已修（用 trimmed_prefix）
@@ -149,4 +149,22 @@
   - `git diff --check` ✅ 无 whitespace/error marker 问题。
 - Git：
   - 已提交本轮修复（当前 HEAD：`Debounce inline completion requests`）。
+  - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 09:31 cron
+- 选择任务：优化 ghost text 渲染体验；前三项核心问题和请求节流/取消均已完成，本轮只修一个渲染路径细节。
+- 修改文件：
+  - `helix/helix-term/src/ui/editor.rs`
+    - 修复 `render_view` 中 stale ghost text 检测直接 `return` 的问题。
+    - 当 inline completion 记录的 cursor 与当前 cursor 不一致时，现在只跳过 ghost text 绘制，不再提前退出整个 view 渲染。
+    - 避免光标移动后一帧内丢失右边框、诊断 fallback、statusline 等后续渲染内容，降低视觉闪烁。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m33s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (84bc5d2c)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复（当前 HEAD：`Avoid early return for stale ghost text`）。
   - push 需要 token，按要求跳过。
