@@ -5463,25 +5463,35 @@ pub fn ghost_text_accept(cx: &mut Context) {
         smart_tab(cx);
         return;
     }
-    // Replace the already typed current-line prefix with the full completion text.
-    // Copilot usually returns the whole completed expression, while the rendered ghost
-    // text only shows the suffix.  Accepting must therefore replace the visible prefix
-    // instead of inserting the whole text at the cursor and duplicating it.
+    // Replace the server-provided range when present.  Copilot and other inline
+    // completion servers may return a precise single-line replacement range; using
+    // it avoids guessing too broadly from the current line prefix.
     use helix_core::Tendril;
-    let line = text.char_to_line(cursor);
-    let line_start = text.line_to_char(line);
-    let prefix = text.slice(line_start..cursor).to_string();
-    let trimmed_prefix = prefix.trim_start();
-    let replace_start = if trimmed_prefix.is_empty() {
-        cursor
+    let (replace_start, replace_end) = if let Some(range) = ghost.replacement_range {
+        (range.start, range.end)
     } else {
-        line_start + prefix.chars().count() - trimmed_prefix.chars().count()
+        // Fallback for servers that omit a range: replace the already typed
+        // current-line prefix with the full completion text.  Copilot usually
+        // returns the whole completed expression, while the rendered ghost text
+        // only shows the suffix.  Accepting must therefore replace the visible
+        // prefix instead of inserting the whole text at the cursor and
+        // duplicating it.
+        let line = text.char_to_line(cursor);
+        let line_start = text.line_to_char(line);
+        let prefix = text.slice(line_start..cursor).to_string();
+        let trimmed_prefix = prefix.trim_start();
+        let replace_start = if trimmed_prefix.is_empty() {
+            cursor
+        } else {
+            line_start + prefix.chars().count() - trimmed_prefix.chars().count()
+        };
+        (replace_start, cursor)
     };
     let transaction = Transaction::change(
         doc.text(),
         std::iter::once((
             replace_start,
-            cursor,
+            replace_end,
             Some(Tendril::from(ghost.insert_text.as_str())),
         )),
     );

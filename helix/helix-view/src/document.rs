@@ -238,6 +238,8 @@ pub struct InlineCompletion {
     pub display_text: String,
     /// Cursor position at which this ghost text was requested/applied.
     pub cursor: usize,
+    /// Optional document range to replace when accepting the completion.
+    pub replacement_range: Option<std::ops::Range<usize>>,
 }
 
 impl InlineCompletion {
@@ -247,6 +249,7 @@ impl InlineCompletion {
             insert_text,
             display_text: display,
             cursor,
+            replacement_range: None,
         }
     }
 }

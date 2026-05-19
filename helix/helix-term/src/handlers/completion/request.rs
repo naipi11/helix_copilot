@@ -9,7 +9,7 @@ use helix_core::syntax::config::LanguageServerFeature;
 use helix_event::{cancelable_future, TaskController, TaskHandle};
 use helix_lsp::lsp;
 use helix_lsp::lsp::{CompletionContext, CompletionTriggerKind};
-use helix_lsp::util::pos_to_lsp_pos;
+use helix_lsp::util::{lsp_range_to_range, pos_to_lsp_pos};
 use helix_stdx::rope::RopeSliceExt;
 use helix_view::document::{Mode, SavePoint};
 use helix_view::handlers::completion::{CompletionEvent, ResponseContext};
@@ -362,6 +362,7 @@ fn request_inline_completion_from_servers_now(
                     return;
                 };
                 let insert_text = first.insert_text;
+                let replacement_range = first.range;
                 dispatch(move |editor, _compositor| {
                     if handle.is_canceled() {
                         return;
@@ -382,7 +383,14 @@ fn request_inline_completion_from_servers_now(
                     }
                     let line = text.char_to_line(cursor);
                     let line_start = text.line_to_char(line);
-                    let prefix = text.slice(line_start..cursor).to_string();
+                    let replacement_range = replacement_range
+                        .and_then(|range| lsp_range_to_range(doc.text(), range, offset_encoding))
+                        .filter(|range| range.from() <= cursor && cursor <= range.to())
+                        .map(|range| range.from()..range.to());
+                    let prefix_start = replacement_range
+                        .as_ref()
+                        .map_or(line_start, |range| range.start);
+                    let prefix = text.slice(prefix_start..cursor).to_string();
                     // Strip leading whitespace from prefix (indentation) since Copilot
                     // suggestions don't include leading whitespace
                     let trimmed_prefix = prefix.trim_start();
@@ -406,6 +414,7 @@ fn request_inline_completion_from_servers_now(
                         insert_text: insert_text,
                         display_text: display_text,
                         cursor,
+                        replacement_range,
                     });
                 })
                 .await;

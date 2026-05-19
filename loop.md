@@ -262,3 +262,26 @@
 - Git：
   - 已提交本轮修复（当前 HEAD：`Use char offsets for ghost text prefix`）。
   - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 14:30 cron
+- 选择任务：优化 ghost text 接受体验；前三项核心问题已完成，本轮只推进 LSP inline completion `range` 支持，避免继续扩大前缀猜测逻辑。
+- 修改文件：
+  - `helix/helix-view/src/document.rs`
+    - `InlineCompletion` 新增 `replacement_range: Option<Range<usize>>`，用于保存服务端返回的精确替换范围。
+  - `helix/helix-term/src/handlers/completion/request.rs`
+    - 读取 `InlineCompletionItem.range`，用 `lsp_range_to_range` 按服务端 offset encoding 转为 Helix char range。
+    - 仅接受包含当前 cursor 的 range；渲染 display_text 时优先按该 range 起点计算已输入 prefix。
+    - 保持无 range 时的当前行 prefix fallback，兼容 Copilot/其他服务器旧行为。
+  - `helix/helix-term/src/commands.rs`
+    - `ghost_text_accept` 接受时优先替换服务端提供的 `replacement_range`。
+    - 无 range 时继续使用已有的非缩进当前行 prefix 替换逻辑。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m11s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (21874e5a)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复（当前 HEAD：`Use inline completion replacement ranges`）。
+  - push 需要 token，按要求跳过。
