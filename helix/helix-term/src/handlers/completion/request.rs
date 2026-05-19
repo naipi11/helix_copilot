@@ -311,6 +311,7 @@ fn request_inline_completion_from_servers_now(
         return;
     }
 
+    let mut has_inline_ls = false;
     for ls in doc.language_servers() {
         let ls = ls;
         let doc_id = doc.identifier();
@@ -320,6 +321,7 @@ fn request_inline_completion_from_servers_now(
         if !support_inline {
             continue;
         }
+        has_inline_ls = true;
         let request = ls.inline_completion(doc_id, pos);
         let view_id = trigger.view;
         let doc_id = trigger.doc;
@@ -401,6 +403,19 @@ fn request_inline_completion_from_servers_now(
                 .await;
             });
         }
+    }
+
+    // If no inline-capable LS was found (e.g. Copilot not yet initialized),
+    // schedule a retry after a short delay
+    if !has_inline_ls && !handle.is_canceled() {
+        let retry_handle = handle.clone();
+        let retry_trigger = trigger;
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(800)).await;
+            dispatch_blocking(move |editor, _compositor| {
+                request_inline_completion_from_servers_now(editor, retry_trigger, retry_handle);
+            });
+        });
     }
 }
 
