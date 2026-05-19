@@ -244,3 +244,21 @@
 - Git：
   - 已提交本轮修复（当前 HEAD：`Ignore stale ghost text on accept`）。
   - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 13:49 cron
+- 选择任务：优化 ghost text 前缀计算正确性；前三项核心问题已完成，本轮只修一个 char/byte offset 混用细节，不重复已做事项。
+- 修改文件：
+  - `helix/helix-term/src/handlers/completion/request.rs`
+    - inline completion 响应落地计算当前行 prefix 时，将 `text.line_to_byte(line)` 修正为 `text.line_to_char(line)`。
+    - 修复非 ASCII / 多字节字符所在行上 `text.slice(line_start..cursor)` 可能使用 byte offset 当 char offset 的问题。
+    - 避免中文、emoji 等场景下 ghost text display_text 前缀剥离错位，影响渲染或接受体验。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m12s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (e4549840)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复（当前 HEAD：`Use char offsets for ghost text prefix`）。
+  - push 需要 token，按要求跳过。

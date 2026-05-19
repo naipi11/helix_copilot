@@ -381,7 +381,7 @@ fn request_inline_completion_from_servers_now(
                         return;
                     }
                     let line = text.char_to_line(cursor);
-                    let line_start = text.line_to_byte(line);
+                    let line_start = text.line_to_char(line);
                     let prefix = text.slice(line_start..cursor).to_string();
                     // Strip leading whitespace from prefix (indentation) since Copilot
                     // suggestions don't include leading whitespace
