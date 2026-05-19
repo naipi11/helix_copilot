@@ -229,11 +229,17 @@ impl EditorView {
                     .primary()
                     .cursor(doc.text().slice(..));
                 if ghost.cursor == cursor {
-                    let text = doc.text();
-                    let line = text.char_to_line(cursor);
-                    let line_start = text.line_to_byte(line);
-                    let col = text.slice(line_start..cursor).chars().count();
-                    let visual_row = line.saturating_sub(view_offset.vertical_offset as usize);
+                    let text = doc.text().slice(..);
+                    let text_format = doc.text_format(inner.width, None);
+                    let Position { col, row } = visual_offset_from_block(
+                        text,
+                        view_offset.anchor,
+                        cursor,
+                        &text_format,
+                        &text_annotations,
+                    )
+                    .0;
+                    let visual_row = row.saturating_sub(view_offset.vertical_offset as usize);
                     let visual_col = col.saturating_sub(view_offset.horizontal_offset as usize);
                     if visual_row < inner.height as usize {
                         let screen_x = inner.left() + visual_col as u16;
