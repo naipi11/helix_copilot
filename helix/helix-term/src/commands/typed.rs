@@ -2498,6 +2498,52 @@ fn refresh_config(
     Ok(())
 }
 
+fn copilot_model(
+    cx: &mut compositor::Context,
+    args: Args,
+    event: PromptEvent,
+) -> anyhow::Result<()> {
+    if event != PromptEvent::Validate {
+        return Ok(());
+    }
+
+    let Some(model) = args.first() else {
+        cx.editor.set_error("usage: :model <copilot-model-name>");
+        return Ok(());
+    };
+
+    let output = std::process::Command::new("helix-copilot")
+        .arg("model")
+        .arg(model)
+        .output();
+
+    match output {
+        Ok(output) if output.status.success() => {
+            cx.editor.set_status(format!(
+                "Copilot model set to {model}; restart language server or hx"
+            ));
+        }
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let message = if !stderr.trim().is_empty() {
+                stderr.trim()
+            } else if !stdout.trim().is_empty() {
+                stdout.trim()
+            } else {
+                "helix-copilot model failed"
+            };
+            cx.editor.set_error(message.to_string());
+        }
+        Err(err) => {
+            cx.editor.set_error(format!(
+                "failed to run helix-copilot: {err}; ensure helix-copilot is in PATH"
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn append_output(
     cx: &mut compositor::Context,
     args: Args,
@@ -3789,6 +3835,17 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         completer: CommandCompleter::none(),
         signature: Signature {
             positionals: (0, Some(0)),
+            ..Signature::DEFAULT
+        },
+    },
+    TypableCommand {
+        name: "model",
+        aliases: &[],
+        doc: "Set the GitHub Copilot model via helix-copilot model <name>.",
+        fun: copilot_model,
+        completer: CommandCompleter::none(),
+        signature: Signature {
+            positionals: (1, Some(1)),
             ..Signature::DEFAULT
         },
     },

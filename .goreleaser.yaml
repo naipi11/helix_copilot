@@ -24,6 +24,12 @@ archives:
     format_overrides:
       - goos: windows
         formats: [zip]
+    files:
+      - src: "hx-assets/{{ .Os }}_{{ .Arch }}/hx{{ .Ext }}"
+        dst: "."
+      - src: "helix/runtime/**/*"
+        dst: "runtime"
+        strip_parent: true
 
 checksum:
   name_template: checksums.txt

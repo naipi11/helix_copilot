@@ -24,13 +24,14 @@ type Proxy struct {
 	helixReader *bufio.Reader
 
 	mu        sync.Mutex
-	idMapping map[int]int // inlineCompletion ID → original completion ID
+	idMapping map[int]json.RawMessage // inlineCompletion ID → original completion ID
 	nextID    int
+	initReqID json.RawMessage
 }
 
 func NewProxy() *Proxy {
 	return &Proxy{
-		idMapping: make(map[int]int),
+		idMapping: make(map[int]json.RawMessage),
 		nextID:    10000,
 	}
 }
@@ -123,7 +124,7 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 			return
 		}
 
-		id, hasID := rawID(msg)
+		id, hasID := rawNumericID(msg)
 		if hasID {
 			p.mu.Lock()
 			origID, mapped := p.idMapping[id]
@@ -143,7 +144,7 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 			}
 
 			// Check if this is an initialize response → inject completionProvider
-			initResp, isInit := tryParseInitResponse(msg)
+			initResp, isInit := p.tryParseInitResponse(msg)
 			if isInit {
 				modified := injectCompletionProvider(initResp)
 				if err := writeLSP(os.Stdout, modified); err != nil {
@@ -202,11 +203,10 @@ func (p *Proxy) handleCompletionRequest(msg []byte) error {
 	}
 
 	// Extract the ID
-	rawID, ok := req["id"].(float64)
+	origID, ok := rawID(msg)
 	if !ok {
 		return fmt.Errorf("completion request missing id")
 	}
-	origID := int(rawID)
 
 	// Extract params
 	params, ok := req["params"].(map[string]any)
@@ -245,7 +245,7 @@ func (p *Proxy) handleCompletionRequest(msg []byte) error {
 	return writeLSP(p.childIn, data)
 }
 
-func (p *Proxy) rewriteInlineResponseAsCompletion(msg []byte, origID int) []byte {
+func (p *Proxy) rewriteInlineResponseAsCompletion(msg []byte, origID json.RawMessage) []byte {
 	var resp map[string]any
 	if err := json.Unmarshal(msg, &resp); err != nil {
 		return msg // fallback: return as-is
@@ -254,8 +254,8 @@ func (p *Proxy) rewriteInlineResponseAsCompletion(msg []byte, origID int) []byte
 	// Build a completion response
 	completionResp := map[string]any{
 		"jsonrpc": "2.0",
-		"id":      origID,
 	}
+	completionResp["id"] = json.RawMessage(origID)
 
 	// If it's an error, forward the error
 	if err, ok := resp["error"]; ok {
@@ -396,11 +396,10 @@ func readLSP(r *bufio.Reader) ([]byte, error) {
 }
 
 func writeLSP(w io.Writer, data []byte) error {
-	header := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(data))
-	if _, err := io.WriteString(w, header); err != nil {
-		return err
-	}
-	_, err := w.Write(data)
+	var frame strings.Builder
+	fmt.Fprintf(&frame, "Content-Length: %d\r\n\r\n", len(data))
+	frame.Write(data)
+	_, err := io.WriteString(w, frame.String())
 	return err
 }
 
@@ -414,35 +413,47 @@ func rawMethod(msg []byte) string {
 	return parsed.Method
 }
 
-func rawID(msg []byte) (int, bool) {
+func rawID(msg []byte) (json.RawMessage, bool) {
 	var parsed struct {
 		ID json.RawMessage `json:"id"`
 	}
-	if err := json.Unmarshal(msg, &parsed); err != nil || len(parsed.ID) == 0 {
+	if err := json.Unmarshal(msg, &parsed); err != nil || len(parsed.ID) == 0 || string(parsed.ID) == "null" {
+		return nil, false
+	}
+	return append(json.RawMessage(nil), parsed.ID...), true
+}
+
+func rawNumericID(msg []byte) (int, bool) {
+	id, ok := rawID(msg)
+	if !ok {
 		return 0, false
 	}
-
-	// Can be a number or string
 	var idInt int
-	if err := json.Unmarshal(parsed.ID, &idInt); err == nil {
+	if err := json.Unmarshal(id, &idInt); err == nil {
 		return idInt, true
 	}
 	var idFloat float64
-	if err := json.Unmarshal(parsed.ID, &idFloat); err == nil {
+	if err := json.Unmarshal(id, &idFloat); err == nil {
 		return int(idFloat), true
 	}
 	return 0, false
 }
 
-func tryParseInitResponse(msg []byte) ([]byte, bool) {
-	var resp struct {
-		ID     *int            `json:"id"`
-		Result json.RawMessage `json:"result"`
-	}
-	if err := json.Unmarshal(msg, &resp); err != nil || resp.ID == nil {
+func (p *Proxy) tryParseInitResponse(msg []byte) ([]byte, bool) {
+	id, hasID := rawID(msg)
+	if !hasID {
 		return nil, false
 	}
-	if *resp.ID != 1 {
+	if len(p.initReqID) == 0 {
+		p.initReqID = json.RawMessage(`1`)
+	}
+	if string(id) != string(p.initReqID) {
+		return nil, false
+	}
+	var resp struct {
+		Result json.RawMessage `json:"result"`
+	}
+	if err := json.Unmarshal(msg, &resp); err != nil {
 		return nil, false
 	}
 	// Check if this looks like an initialize result with capabilities
@@ -456,4 +467,8 @@ func tryParseInitResponse(msg []byte) ([]byte, bool) {
 		return nil, false
 	}
 	return msg, true
+}
+
+func tryParseInitResponse(msg []byte) ([]byte, bool) {
+	return (&Proxy{initReqID: json.RawMessage(`1`)}).tryParseInitResponse(msg)
 }

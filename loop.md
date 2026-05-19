@@ -310,3 +310,19 @@
   - LSP 代理支持 `inlineCompletion` 数组结果与 legacy `text` 字段回退，避免部分服务端响应被静默丢弃。
   - 新增 Linux/macOS `scripts/install.sh`、Windows `scripts/install.ps1`、GoReleaser 配置、CI/Release workflow、Scoop/Homebrew 模板。
   - README 更新配置合并、安装发布和 `:/model` 评估说明。
+
+
+## 本轮记录 — 2026-05-19 继续推进
+- 选择任务：补齐发布归档内 patched `hx`，继续加强 LSP 代理 JSON-RPC 兼容性。
+- 发布配置：
+  - `build-hx` artifact 改为上传裸 `hx`/`hx.exe` 目录。
+  - GoReleaser 归档通过 `archives.files` 纳入对应平台 `hx`/`hx.exe` 和 `helix/runtime`。
+  - `goreleaser` job 下载所有 `hx_*` artifacts 并整理到 `hx-assets/{os}_{arch}`。
+  - 删除单独 attach hx asset job，避免用户需要分别下载 CLI 与 hx。
+- LSP 代理：
+  - 原始 Helix completion request ID 改为保存 `json.RawMessage`，支持字符串 ID 回写。
+  - init response 识别改为使用记录的 initialize request ID，不再只接受 id=1；保留 legacy helper 默认 id=1 兼容旧测试。
+  - `writeLSP` 改为一次写出完整 frame，避免 header/body 分离写入的未来交错风险。
+- Helix `:/model`：
+  - 当前保留一个最小 Helix patch：`:model <name>` 调用外部 `helix-copilot model <name>` 并提示重启 LSP/hx。
+  - 这是轻量实现；若维护成本变高，再退回 README 中的“等待插件接口”路线。
