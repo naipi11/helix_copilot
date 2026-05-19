@@ -5453,12 +5453,29 @@ pub fn ghost_text_accept(cx: &mut Context) {
     let Some(ghost) = doc.inline_completion.take() else {
         return;
     };
-    // Insert the full ghost text at the cursor position
+    // Replace the already typed current-line prefix with the full completion text.
+    // Copilot usually returns the whole completed expression, while the rendered ghost
+    // text only shows the suffix.  Accepting must therefore replace the visible prefix
+    // instead of inserting the whole text at the cursor and duplicating it.
     use helix_core::Tendril;
-    let transaction = Transaction::insert(
+    let text = doc.text().slice(..);
+    let cursor = doc.selection(view.id).primary().cursor(text);
+    let line = text.char_to_line(cursor);
+    let line_start = text.line_to_char(line);
+    let prefix = text.slice(line_start..cursor).to_string();
+    let trimmed_prefix = prefix.trim_start();
+    let replace_start = if trimmed_prefix.is_empty() {
+        cursor
+    } else {
+        line_start + prefix.chars().count() - trimmed_prefix.chars().count()
+    };
+    let transaction = Transaction::change(
         doc.text(),
-        doc.selection(view.id),
-        Tendril::from(ghost.insert_text.as_str()),
+        std::iter::once((
+            replace_start,
+            cursor,
+            Some(Tendril::from(ghost.insert_text.as_str())),
+        )),
     );
     doc.apply(&transaction, view.id);
 }

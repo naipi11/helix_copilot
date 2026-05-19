@@ -3,15 +3,16 @@
 ## 当前状态
 - ghost text 基础管道已通：hx → proxy → Copilot LS → proxy → hx
 - 触发逻辑：随 `trigger_auto_completion` 自动触发；inline completion 现在有独立触发路径，不再依赖普通 completion handler 命中
-- 接受：Tab（无 ghost text 时 fallback 到 smart_tab）
+- 接受：Tab（无 ghost text 时 fallback 到 smart_tab）；接受时会替换当前行已输入前缀，避免完整 completion 重复插入
 - 拒绝：Esc
-- 已构建并安装：`~/.local/bin/hx` → helix 25.07.1 (84bc5d2c)
+- 已构建并安装：`~/.local/bin/hx` → helix 25.07.1 (b58b8a03)
 
 ## 已知问题
 1. **前缀匹配含缩进** → ✅ 已修（用 trimmed_prefix）
 2. **Python 文件不触发** → ✅ 已修：`trigger_auto_completion` 直接调用 `request_inline_completion_from_servers`
-3. **光标移动不清 ghost text** → 用户在 insert 模式下按方向键 ghost text 残留
-4. **long-running ghost text 反馈慢** → 打字快到一定速度时请求滞后
+3. **光标移动不清 ghost text** → ✅ 已修：记录 ghost cursor，移动后清除/跳过 stale ghost text
+4. **long-running ghost text 反馈慢** → ✅ 已优化：inline 请求取消、stale response 丢弃、75ms debounce
+5. **Tab 接受完整 completion 会重复当前前缀** → ✅ 已修：接受时替换当前行非缩进前缀
 
 ## 本轮记录 — 2026-05-19 04:56 cron
 - 选择任务：修复 Python 文件不触发 inline completion。
@@ -107,6 +108,7 @@
 
 ## 下次启动任务
 1. 继续观察 75ms inline completion debounce 效果；如仍有压力，再考虑按文档/光标聚合请求或配置化 debounce。
+2. 观察 Tab 接受前缀替换在不同语言/缩进场景下的表现；如发现 replacement range 过宽，再改成基于 LSP range 或 token 边界。
 
 ## 本轮记录 — 2026-05-19 08:21 cron
 - 选择任务：进一步优化 inline completion 请求取消/节流策略（前三个高优先级问题均已完成，本轮只推进体验/性能优化中的取消策略）。
@@ -167,4 +169,22 @@
   - `git diff --check` ✅ 无 whitespace/error marker 问题。
 - Git：
   - 已提交本轮修复（当前 HEAD：`Avoid early return for stale ghost text`）。
+  - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 10:10 cron
+- 选择任务：优化 ghost text 接受体验；前三项核心触发/残留问题已完成，本轮只修 Tab 接受时的前缀重复问题，不重复已做事项。
+- 修改文件：
+  - `helix/helix-term/src/commands.rs`
+    - `ghost_text_accept` 不再把 Copilot 返回的完整 `insert_text` 直接插入到 cursor。
+    - 接受时会计算当前行中用户已输入的非缩进前缀，并用完整 completion 文本替换该前缀，避免出现 `pri` + `print(...)` 之类重复内容。
+    - 使用 `line_to_char` / `chars().count()` 维持 Helix char offset 语义，避免 byte/char offset 混用。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（期间发现其他 cron/进程持有 build lock，已清理后用 flock 串行构建；最终 release build 约 9m34s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (b58b8a03)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 待提交：`helix/helix-term/src/commands.rs`。
   - push 需要 token，按要求跳过。
