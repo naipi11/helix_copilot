@@ -1,0 +1,35 @@
+version: 2
+project_name: helix-copilot
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./cmd/helix-copilot ./internal/config ./internal/helixconfig ./internal/login ./internal/lsp
+
+builds:
+  - id: helix-copilot
+    main: ./cmd/helix-copilot
+    binary: helix-copilot
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, windows, darwin]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+
+archives:
+  - id: default
+    ids: [helix-copilot]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: naipi11
+    name: helix_copilot
+  draft: true

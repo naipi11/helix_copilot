@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "description": "Helix GitHub Copilot bridge and patched ghost text workflow",
+  "homepage": "https://github.com/naipi11/helix_copilot",
+  "license": "MIT",
+  "notes": "Node.js is required because helix-copilot runs @github/copilot-language-server via npx.",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/naipi11/helix_copilot/releases/download/v0.1.0/helix-copilot_windows_amd64.zip",
+      "hash": "TODO"
+    },
+    "arm64": {
+      "url": "https://github.com/naipi11/helix_copilot/releases/download/v0.1.0/helix-copilot_windows_arm64.zip",
+      "hash": "TODO"
+    }
+  },
+  "bin": ["helix-copilot.exe", "hx.exe"]
+}

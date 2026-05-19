@@ -264,17 +264,16 @@ func (p *Proxy) rewriteInlineResponseAsCompletion(msg []byte, origID int) []byte
 		return data
 	}
 
-	// Extract inline completion items
-	result, ok := resp["result"].(map[string]any)
-	if !ok {
-		// If result is directly an array or null...
-		completionResp["result"] = nil
-		data, _ := json.Marshal(completionResp)
-		return data
+	// Extract inline completion items. LSP allows either an array of
+	// InlineCompletionItem or an InlineCompletionList { items = [...] }.
+	var items []any
+	switch result := resp["result"].(type) {
+	case []any:
+		items = result
+	case map[string]any:
+		items, _ = result["items"].([]any)
 	}
-
-	items, ok := result["items"].([]any)
-	if !ok || len(items) == 0 {
+	if len(items) == 0 {
 		completionResp["result"] = nil
 		data, _ := json.Marshal(completionResp)
 		return data
@@ -289,6 +288,9 @@ func (p *Proxy) rewriteInlineResponseAsCompletion(msg []byte, origID int) []byte
 		}
 
 		insertText, _ := inlineItem["insertText"].(string)
+		if insertText == "" {
+			insertText, _ = inlineItem["text"].(string)
+		}
 		if insertText == "" {
 			continue
 		}

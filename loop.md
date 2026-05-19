@@ -296,3 +296,17 @@
 - 验证：
   - `hx --health python` 显示 `pylsp` 与 `copilot` 均为 ✓。
   - 直接 LSP 探针确认 Python `textDocument/inlineCompletion` 可返回 Copilot 建议。
+
+## 本轮记录 — 2026-05-19 开发计划推进
+- 选择任务：按计划推进 `languages.toml` 安全合并、安装/发布配置、LSP 代理兼容性、`:/model` 评估。
+- 三档分工：
+  - 高档主代理负责范围裁剪、实现、验证、提交推送。
+  - 中档子代理分别调查 languages 合并、安装发布、LSP 代理兼容性。
+  - 低档任务本轮未单独派发，简单文件/状态核对由主代理工具完成。
+- 实现：
+  - 新增 `internal/helixconfig` 合并器，`configure-helix` 不再直接覆盖用户 `languages.toml`，而是解析/合并/写回。
+  - 合并器保留已有 `[[language]]` 字段，只向 `language-servers` 追加 `copilot`，并添加 Copilot server / pylsp 风格诊断配置。
+  - 新增合并器单元测试，覆盖保留既有配置、幂等、新文件创建。
+  - LSP 代理支持 `inlineCompletion` 数组结果与 legacy `text` 字段回退，避免部分服务端响应被静默丢弃。
+  - 新增 Linux/macOS `scripts/install.sh`、Windows `scripts/install.ps1`、GoReleaser 配置、CI/Release workflow、Scoop/Homebrew 模板。
+  - README 更新配置合并、安装发布和 `:/model` 评估说明。

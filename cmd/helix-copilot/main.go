@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/naipi11/helix_copilot/internal/config"
+	"github.com/naipi11/helix_copilot/internal/helixconfig"
 	"github.com/naipi11/helix_copilot/internal/login"
 	"github.com/naipi11/helix_copilot/internal/lsp"
 )
@@ -101,8 +102,8 @@ func runConfigureHelix(args []string) int {
 		fmt.Fprintf(stderr, "create dir: %v\n", err)
 		return 1
 	}
-	if err := os.WriteFile(out, []byte(helixSnippet()), 0o644); err != nil {
-		fmt.Fprintf(stderr, "write snippet: %v\n", err)
+	if err := helixconfig.MergeCopilot(out); err != nil {
+		fmt.Fprintf(stderr, "merge Helix config: %v\n", err)
 		return 1
 	}
 	fmt.Fprintf(stdout, "wrote %s\n", out)

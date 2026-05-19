@@ -111,3 +111,43 @@ func TestTryParseInitResponse(t *testing.T) {
 		t.Fatal("id=2 should not be init response")
 	}
 }
+
+func TestRewriteInlineResponseAsCompletionHandlesArrayResult(t *testing.T) {
+	proxy := NewProxy()
+	msg := []byte(`{"jsonrpc":"2.0","id":10000,"result":[{"insertText":"fmt.Println(\"hi\")"},{"insertText":"return nil"}]}`)
+	modified := proxy.rewriteInlineResponseAsCompletion(msg, 7)
+
+	var resp map[string]any
+	if err := json.Unmarshal(modified, &resp); err != nil {
+		t.Fatalf("invalid json: %v", err)
+	}
+	if resp["id"].(float64) != 7 {
+		t.Fatalf("id = %v, want 7", resp["id"])
+	}
+	result := resp["result"].(map[string]any)
+	items := result["items"].([]any)
+	if len(items) != 2 {
+		t.Fatalf("items len = %d, want 2", len(items))
+	}
+	first := items[0].(map[string]any)
+	if first["insertText"] != "fmt.Println(\"hi\")" {
+		t.Fatalf("insertText = %v", first["insertText"])
+	}
+}
+
+func TestRewriteInlineResponseAsCompletionUsesTextFallback(t *testing.T) {
+	proxy := NewProxy()
+	msg := []byte(`{"jsonrpc":"2.0","id":10000,"result":{"items":[{"text":"legacy text completion"}]}}`)
+	modified := proxy.rewriteInlineResponseAsCompletion(msg, 7)
+
+	var resp map[string]any
+	if err := json.Unmarshal(modified, &resp); err != nil {
+		t.Fatalf("invalid json: %v", err)
+	}
+	result := resp["result"].(map[string]any)
+	items := result["items"].([]any)
+	first := items[0].(map[string]any)
+	if first["insertText"] != "legacy text completion" {
+		t.Fatalf("insertText = %v", first["insertText"])
+	}
+}
