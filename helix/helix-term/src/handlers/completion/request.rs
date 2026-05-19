@@ -289,24 +289,10 @@ fn request_completions(
     tokio::spawn(cancelable_future(request_completions, handle));
 }
 
-const INLINE_COMPLETION_DEBOUNCE: Duration = Duration::from_millis(75);
-
-/// Debounce and request inline completion (ghost text) from language servers that support it.
+/// Request inline completion (ghost text) directly, without debounce.
 pub fn request_inline_completion_from_servers(editor: &mut Editor, trigger: Trigger) {
-    let handle = editor
-        .handlers
-        .completions
-        .inline_request_controller
-        .restart();
-
-    let request_handle = handle.clone();
-    let debounce_inline_completion = async move {
-        tokio::time::sleep(INLINE_COMPLETION_DEBOUNCE).await;
-        dispatch_blocking(move |editor, _compositor| {
-            request_inline_completion_from_servers_now(editor, trigger, request_handle)
-        });
-    };
-    tokio::spawn(cancelable_future(debounce_inline_completion, handle));
+    let handle = editor.handlers.completions.inline_request_controller.restart();
+    request_inline_completion_from_servers_now(editor, trigger, handle);
 }
 
 fn request_inline_completion_from_servers_now(
@@ -321,7 +307,6 @@ fn request_inline_completion_from_servers_now(
     if handle.is_canceled()
         || trigger.view != view.id
         || trigger.doc != doc.id()
-        || trigger.pos != cursor
     {
         return;
     }
@@ -338,7 +323,6 @@ fn request_inline_completion_from_servers_now(
         let request = ls.inline_completion(doc_id, pos);
         let view_id = trigger.view;
         let doc_id = trigger.doc;
-        let request_cursor = trigger.pos;
         if let Some(fut) = request {
             let handle = handle.clone();
             tokio::spawn(async move {
@@ -378,9 +362,6 @@ fn request_inline_completion_from_servers_now(
                     // Compute display text: strip what the user already typed
                     let text = doc.text().slice(..);
                     let cursor = doc.selection(view_id).primary().cursor(text);
-                    if cursor != request_cursor {
-                        return;
-                    }
                     let line = text.char_to_line(cursor);
                     let line_start = text.line_to_char(line);
                     let replacement_range = replacement_range
