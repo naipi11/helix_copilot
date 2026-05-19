@@ -19,7 +19,7 @@ use helix_core::{
     movement::Direction,
     syntax::{self, OverlayHighlights},
     text_annotations::TextAnnotations,
-    unicode::width::UnicodeWidthStr,
+    unicode::width::{UnicodeWidthChar, UnicodeWidthStr},
     visual_offset_from_block, Change, Position, Range, Selection, Transaction,
 };
 use helix_view::{
@@ -260,18 +260,25 @@ impl EditorView {
                                     + ghost_line
                                         .chars()
                                         .take_while(|ch| ch.is_whitespace())
-                                        .count()
+                                        .map(|ch| ch.width().unwrap_or(0))
+                                        .sum::<usize>()
                                         .saturating_sub(view_offset.horizontal_offset as usize)
                                         as u16
                             };
-
-                            for (i, ch) in ghost_line.chars().enumerate() {
-                                let x = start_x + i as u16;
-                                if x >= inner.right() {
-                                    break;
-                                }
-                                surface[(x, y)].set_char(ch).set_style(ghost_style);
+                            if start_x >= inner.right() {
+                                continue;
                             }
+
+                            let remaining_width = (inner.right() - start_x) as usize;
+                            surface.set_string_truncated(
+                                start_x,
+                                y,
+                                ghost_line,
+                                remaining_width,
+                                |_| ghost_style,
+                                false,
+                                false,
+                            );
                         }
                     }
                 }

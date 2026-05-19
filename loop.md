@@ -206,3 +206,23 @@
 - Git：
   - 已提交本轮修复（当前 HEAD：`Align ghost text with visual cursor offset`）。
   - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 12:34 cron
+- 选择任务：优化 ghost text 渲染性能/体验；前三项核心触发/残留问题已完成，本轮只修一个字符宽度渲染细节。
+- 修改文件：
+  - `helix/helix-term/src/ui/editor.rs`
+    - ghost text 绘制不再手动按 `chars().enumerate()` 写入单个 cell。
+    - 改用 `surface.set_string_truncated` 渲染每行 ghost text，复用 Helix/TUI 现有 grapheme/宽字符处理逻辑。
+    - 多行 ghost text 后续行缩进计算从字符数量改为 Unicode 显示宽度，避免 Tab/宽字符缩进时起点错位。
+    - 保留 viewport 右侧截断和 stale cursor 校验逻辑。
+- 验证：
+  - 初次 `cargo check` 发现需要引入 `UnicodeWidthChar`，已修复。
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m23s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (7c5f2e53)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 待提交本轮修复。
+  - push 需要 token，按要求跳过。
