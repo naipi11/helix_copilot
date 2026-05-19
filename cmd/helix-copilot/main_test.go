@@ -35,7 +35,15 @@ func TestHelixLanguageSnippetContainsCopilotServer(t *testing.T) {
 		t.Fatalf("read snippet: %v", err)
 	}
 	text := string(data)
-	for _, needle := range []string{"[language-server.copilot]", "helix-copilot", "lsp", "language-servers"} {
+	for _, needle := range []string{
+		"[language-server.copilot]",
+		"helix-copilot",
+		"lsp",
+		"language-servers",
+		"[language-server.pylsp.config.pylsp.plugins.pycodestyle]",
+		"name = \"python\"",
+		"language-servers = [\"pylsp\", \"copilot\"]",
+	} {
 		if !contains(text, needle) {
 			t.Fatalf("snippet missing %q:\n%s", needle, text)
 		}

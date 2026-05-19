@@ -115,6 +115,23 @@ func helixSnippet() string {
 command = "helix-copilot"
 args = ["lsp"]
 
+# Python uses a fast local pylsp alongside Copilot. This keeps Helix's
+# completion pipeline warm while Copilot starts, so ghost text triggers on the
+# first few keystrokes. Style-only diagnostics are disabled to avoid warnings
+# like W292 (missing final newline) while testing inline completion.
+[language-server.pylsp.config.pylsp.plugins.pycodestyle]
+enabled = false
+
+[language-server.pylsp.config.pylsp.plugins.pyflakes]
+enabled = false
+
+[language-server.pylsp.config.pylsp.plugins.flake8]
+enabled = false
+
+[[language]]
+name = "python"
+language-servers = ["pylsp", "copilot"]
+
 # Add "copilot" to each language where inline completion should be enabled, for example:
 [[language]]
 name = "go"

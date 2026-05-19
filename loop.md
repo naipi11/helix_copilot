@@ -285,3 +285,14 @@
 - Git：
   - 已提交本轮修复（当前 HEAD：`Use inline completion replacement ranges`）。
   - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 手动修复
+- 用户确认 Python ghost text 已恢复。
+- 发现新问题：启用 `pylsp` 后出现 `W292 no newline at end of file` 等风格诊断，干扰测试体验。
+- 修复：
+  - 本机 Helix 配置 `/home/stack/.config/helix/languages.toml` 中 Python 改为 `language-servers = ["pylsp", "copilot"]`。
+  - 禁用 `pylsp` 的 `pycodestyle` / `pyflakes` / `flake8` 诊断，避免 W292 等风格警告。
+  - CLI `configure-helix` 生成的 snippet 同步加入 Python+pylsp 配置，避免下次重新生成配置时丢失修复。
+- 验证：
+  - `hx --health python` 显示 `pylsp` 与 `copilot` 均为 ✓。
+  - 直接 LSP 探针确认 Python `textDocument/inlineCompletion` 可返回 Copilot 建议。
