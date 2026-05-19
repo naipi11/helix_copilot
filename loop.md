@@ -186,5 +186,23 @@
   - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (b58b8a03)`。
   - `git diff --check` ✅ 无 whitespace/error marker 问题。
 - Git：
-  - 待提交：`helix/helix-term/src/commands.rs`。
+  - 已提交本轮修复（当前 HEAD：`Replace prefix when accepting ghost text`）。
+  - push 需要 token，按要求跳过。
+
+## 本轮记录 — 2026-05-19 11:55 cron
+- 选择任务：优化 ghost text 渲染体验；前三项核心触发/残留问题已完成，本轮只修一个渲染定位细节。
+- 修改文件：
+  - `helix/helix-term/src/ui/editor.rs`
+    - ghost text 起始坐标不再用当前行 char 数粗略计算。
+    - 改为通过 `doc.text_format(...)` + `visual_offset_from_block(...)` 获取与 Helix 正文渲染一致的视觉 row/col。
+    - 这样 Tab、宽字符、软换行/装饰文本场景下 ghost text 更贴近真实光标位置，减少错位闪烁。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（等待 build lock 后总计约 9m50s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (65a0ae10)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复（当前 HEAD：`Align ghost text with visual cursor offset`）。
   - push 需要 token，按要求跳过。
