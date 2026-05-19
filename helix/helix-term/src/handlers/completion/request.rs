@@ -406,14 +406,33 @@ fn request_inline_completion_from_servers_now(
     }
 
     // If no inline-capable LS was found (e.g. Copilot not yet initialized),
-    // schedule a retry after a short delay
+    // retry a few times with increasing delays
     if !has_inline_ls && !handle.is_canceled() {
-        let retry_handle = handle.clone();
-        let retry_trigger = trigger;
+        // 1s retry
+        let h = handle.clone();
+        let t = trigger;
         tokio::spawn(async move {
-            tokio::time::sleep(Duration::from_millis(800)).await;
-            dispatch_blocking(move |editor, _compositor| {
-                request_inline_completion_from_servers_now(editor, retry_trigger, retry_handle);
+            tokio::time::sleep(Duration::from_millis(1000)).await;
+            dispatch_blocking(move |editor, _c| {
+                request_inline_completion_from_servers_now(editor, t, h);
+            });
+        });
+        // 2s retry
+        let h = handle.clone();
+        let t = trigger;
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(2000)).await;
+            dispatch_blocking(move |editor, _c| {
+                request_inline_completion_from_servers_now(editor, t, h);
+            });
+        });
+        // 4s retry
+        let h = handle.clone();
+        let t = trigger;
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(4000)).await;
+            dispatch_blocking(move |editor, _c| {
+                request_inline_completion_from_servers_now(editor, t, h);
             });
         });
     }
