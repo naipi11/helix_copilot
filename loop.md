@@ -224,5 +224,5 @@
   - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (7c5f2e53)`。
   - `git diff --check` ✅ 无 whitespace/error marker 问题。
 - Git：
-  - 待提交本轮修复。
+  - 已提交本轮修复（当前 HEAD：`Render ghost text with unicode width handling`）。
   - push 需要 token，按要求跳过。
