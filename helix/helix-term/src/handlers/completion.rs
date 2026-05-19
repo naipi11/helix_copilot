@@ -118,14 +118,16 @@ fn show_completion(
     }
 }
 
-pub fn trigger_auto_completion(editor: &Editor, trigger_char_only: bool) {
+pub fn trigger_auto_completion(editor: &mut Editor, trigger_char_only: bool) {
     let config = editor.config.load();
     if !config.auto_completion {
         return;
     }
     let (view, doc): (&helix_view::View, &helix_view::Document) = current_ref!(editor);
+    let view_id = view.id;
+    let doc_id = doc.id();
     let mut text = doc.text().slice(..);
-    let cursor = doc.selection(view.id).primary().cursor(text);
+    let cursor = doc.selection(view_id).primary().cursor(text);
 
     // Ghost text must not depend on the normal completion handler: some language
     // servers (notably Copilot in Python buffers) provide inline completion but no
@@ -137,13 +139,16 @@ pub fn trigger_auto_completion(editor: &Editor, trigger_char_only: bool) {
             editor,
             Trigger {
                 pos: cursor,
-                doc: doc.id(),
-                view: view.id,
+                doc: doc_id,
+                view: view_id,
                 kind: TriggerKind::Auto,
             },
         );
     }
 
+    let (view, doc): (&helix_view::View, &helix_view::Document) = current_ref!(editor);
+    let view_id = view.id;
+    let doc_id = doc.id();
     text = doc.text().slice(..cursor);
 
     let is_trigger_char = doc
@@ -168,8 +173,8 @@ pub fn trigger_auto_completion(editor: &Editor, trigger_char_only: bool) {
     if is_trigger_char || (is_path_completion_trigger && doc.path_completion_enabled()) {
         handler.event(CompletionEvent::TriggerChar {
             cursor,
-            doc: doc.id(),
-            view: view.id,
+            doc: doc_id,
+            view: view_id,
         });
         return;
     }
@@ -185,8 +190,8 @@ pub fn trigger_auto_completion(editor: &Editor, trigger_char_only: bool) {
     if is_auto_trigger {
         handler.event(CompletionEvent::AutoTrigger {
             cursor,
-            doc: doc.id(),
-            view: view.id,
+            doc: doc_id,
+            view: view_id,
         });
     }
 }

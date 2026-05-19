@@ -290,7 +290,7 @@ fn request_completions(
 }
 
 /// Request inline completion (ghost text) from language servers that support it.
-pub fn request_inline_completion_from_servers(editor: &Editor, trigger: Trigger) {
+pub fn request_inline_completion_from_servers(editor: &mut Editor, trigger: Trigger) {
     let (view, doc) = current_ref!(editor);
     let text = doc.text();
     let cursor = doc.selection(view.id).primary().cursor(text.slice(..));
@@ -298,6 +298,12 @@ pub fn request_inline_completion_from_servers(editor: &Editor, trigger: Trigger)
     if trigger.view != view.id || trigger.doc != doc.id() || trigger.pos != cursor {
         return;
     }
+
+    let handle = editor
+        .handlers
+        .completions
+        .inline_request_controller
+        .restart();
 
     for ls in doc.language_servers() {
         let ls = ls;
@@ -313,12 +319,17 @@ pub fn request_inline_completion_from_servers(editor: &Editor, trigger: Trigger)
         let doc_id = trigger.doc;
         let request_cursor = trigger.pos;
         if let Some(fut) = request {
+            let handle = handle.clone();
             tokio::spawn(async move {
-                let result: Option<lsp::InlineCompletionResponse> = fut
-                    .await
-                    .inspect_err(|err| log::error!("inline completion request failed: {err}"))
-                    .ok()
-                    .flatten();
+                let result: Option<lsp::InlineCompletionResponse> =
+                    match cancelable_future(fut, handle.clone()).await {
+                        Some(Ok(result)) => result,
+                        Some(Err(err)) => {
+                            log::error!("inline completion request failed: {err}");
+                            None
+                        }
+                        None => return,
+                    };
                 let Some(response) = result else {
                     return;
                 };
@@ -331,6 +342,9 @@ pub fn request_inline_completion_from_servers(editor: &Editor, trigger: Trigger)
                 };
                 let insert_text = first.insert_text;
                 dispatch(move |editor, _compositor| {
+                    if handle.is_canceled() {
+                        return;
+                    }
                     if editor.mode != Mode::Insert {
                         return;
                     }

@@ -106,4 +106,27 @@
   - push 需要 token，按要求跳过。
 
 ## 下次启动任务
-1. 进一步优化 inline completion 请求取消/节流策略。
+1. 继续观察 inline completion 请求取消策略效果；如仍有压力，再加显式 debounce/节流窗口。
+
+## 本轮记录 — 2026-05-19 08:21 cron
+- 选择任务：进一步优化 inline completion 请求取消/节流策略（前三个高优先级问题均已完成，本轮只推进体验/性能优化中的取消策略）。
+- 修改文件：
+  - `helix/helix-view/src/handlers/completion.rs`
+    - `CompletionHandler` 增加独立的 `inline_request_controller`，与普通 completion 请求控制器分离。
+  - `helix/helix-term/src/handlers/completion.rs`
+    - `trigger_auto_completion` 改为接收 `&mut Editor`，以便 inline 请求路径能重启取消控制器。
+    - 调整触发函数内 view/doc id 保存，避免可变借用 editor 时持有不可变借用。
+  - `helix/helix-term/src/handlers/completion/request.rs`
+    - `request_inline_completion_from_servers` 改为使用独立 `TaskController::restart()`。
+    - 每次新的 ghost text 请求会取消上一批未完成的 inline completion future。
+    - inline 响应 dispatch 落地前再次检查 cancel handle，防止旧请求结果覆盖新输入位置。
+- 验证：
+  - `cargo fmt` ✅ 通过。
+  - `cargo check` ✅ 通过。
+  - `cargo build --release` ✅ 通过（约 5m45s）。
+  - 已安装：`cp target/release/hx ~/.local/bin/hx-new && mv -f ~/.local/bin/hx-new ~/.local/bin/hx`。
+  - `~/.local/bin/hx --version` 输出：`helix 25.07.1 (44c6d601)`。
+  - `git diff --check` ✅ 无 whitespace/error marker 问题。
+- Git：
+  - 已提交本轮修复。
+  - push 需要 token，按要求跳过。

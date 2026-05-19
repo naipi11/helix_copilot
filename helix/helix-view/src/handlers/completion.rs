@@ -11,6 +11,7 @@ pub struct CompletionHandler {
     event_tx: Sender<CompletionEvent>,
     pub active_completions: HashMap<CompletionProvider, ResponseContext>,
     pub request_controller: TaskController,
+    pub inline_request_controller: TaskController,
 }
 
 impl CompletionHandler {
@@ -19,6 +20,7 @@ impl CompletionHandler {
             event_tx,
             active_completions: HashMap::new(),
             request_controller: TaskController::new(),
+            inline_request_controller: TaskController::new(),
         }
     }
 
