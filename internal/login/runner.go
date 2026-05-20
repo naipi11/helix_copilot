@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -146,13 +147,54 @@ func Run(r Runner) error {
 	}
 	msg, err = waitForID(reader, nextID, time.Duration(max(sign.ExpiresIn, 900))*time.Second)
 	if err != nil {
+		// finishDeviceFlow may fail due to network issues (proxy/TLS). If the
+		// user has already authorized in the browser, the auth file will have
+		// been written by the Copilot LS's initialization handshake, so the
+		// login is effectively complete.
+		if authFileExists() {
+			fmt.Fprintln(r.Out, "GitHub Copilot 登录完成（设备码已验证）。")
+			return cmd.Process.Kill()
+		}
 		return fmt.Errorf("finishDeviceFlow: %w", err)
 	}
 	if msg.Error != nil {
+		if authFileExists() {
+			fmt.Fprintln(r.Out, "GitHub Copilot 登录完成（设备码已验证）。")
+			return cmd.Process.Kill()
+		}
 		return fmt.Errorf("finishDeviceFlow: %s", msg.Error.Message)
 	}
 	fmt.Fprintln(r.Out, "GitHub Copilot 登录完成。")
 	return cmd.Process.Kill()
+}
+
+// authFileExists checks whether the Copilot LS has persisted its auth token,
+// which means the device flow completed successfully on GitHub's side even if
+// the finishDeviceFlow LSP command failed due to a network error.
+func authFileExists() bool {
+	var configDir string
+	switch runtime.GOOS {
+	case "windows":
+		configDir = os.Getenv("LOCALAPPDATA")
+		if configDir == "" {
+			configDir = os.Getenv("APPDATA")
+		}
+	default:
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return false
+		}
+		configDir = filepath.Join(home, ".config")
+	}
+	if configDir == "" {
+		return false
+	}
+	// Copilot LS stores auth tokens in a hosts.json file under github-copilot/
+	hostsPath := filepath.Join(configDir, "github-copilot", "hosts.json")
+	if _, err := os.Stat(hostsPath); err == nil {
+		return true
+	}
+	return false
 }
 
 func writeJSONRPC(w io.Writer, v any) error {
