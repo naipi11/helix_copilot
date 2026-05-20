@@ -27,6 +27,7 @@ type Proxy struct {
 	idMapping map[int]json.RawMessage // inlineCompletion ID → original completion ID
 	nextID    int
 	initReqID json.RawMessage
+	ready     bool // Copilot LS has finished initializing
 }
 
 func NewProxy() *Proxy {
@@ -97,6 +98,11 @@ func (p *Proxy) forwardHelixToChild() error {
 				return err
 			}
 		case method == "textDocument/completion":
+			if !p.ready {
+				// Copilot LS not ready yet; drop silently.
+				// Helix will retry on next keystroke.
+				continue
+			}
 			if err := p.handleCompletionRequest(msg); err != nil {
 				fmt.Fprintf(os.Stderr, "completion bridge error: %v\n", err)
 				// Fallback: forward as-is
@@ -146,6 +152,7 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 			// Check if this is an initialize response → inject completionProvider
 			initResp, isInit := p.tryParseInitResponse(msg)
 			if isInit {
+				p.ready = true
 				modified := injectCompletionProvider(initResp)
 				if err := writeLSP(os.Stdout, modified); err != nil {
 					fmt.Fprintf(os.Stderr, "write to helix: %v\n", err)
