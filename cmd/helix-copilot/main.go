@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/naipi11/helix_copilot/internal/config"
@@ -87,8 +88,23 @@ func runModel(args []string) int {
 	return 0
 }
 
+func defaultHelixConfigDir() string {
+	switch runtime.GOOS {
+	case "windows":
+		appData := os.Getenv("APPDATA")
+		if appData != "" {
+			return filepath.Join(appData, "helix")
+		}
+	}
+	home, _ := os.UserHomeDir()
+	if home != "" {
+		return filepath.Join(home, ".config", "helix")
+	}
+	return ".config/helix"
+}
+
 func runConfigureHelix(args []string) int {
-	out := filepath.Join(os.Getenv("HOME"), ".config", "helix", "languages.toml")
+	out := filepath.Join(defaultHelixConfigDir(), "languages.toml")
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--output" && i+1 < len(args) {
 			out = args[i+1]
