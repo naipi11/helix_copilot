@@ -169,6 +169,48 @@ helix-copilot configure-helix --output ./languages.test.toml
 helix-copilot model gpt-5.4-mini
 ```
 
+## 主题配置
+
+本仓库包含为 Copilot Ghost Text 优化的 Helix 主题。
+
+### 使用推荐主题（copilot-green）
+
+**copilot-green** 是专为 Copilot 优化的黑底白字绿色 Ghost Text 主题，让内联补全更清晰可见。
+
+**安装主题：**
+
+```bash
+# Linux/macOS
+cp themes/copilot-green.toml ~/.config/helix/themes/
+
+# Windows PowerShell
+Copy-Item themes\copilot-green.toml "$env:APPDATA\helix\themes\"
+```
+
+**启用主题：**
+
+编辑 Helix 配置文件（Linux/macOS: `~/.config/helix/config.toml`，Windows: `%APPDATA%\helix\config.toml`），在文件开头添加：
+
+```toml
+theme = "copilot-green"
+```
+
+保存后重启 Helix 或运行 `:reload-config`。
+
+**自定义 Ghost Text 颜色：**
+
+编辑 `~/.config/helix/themes/copilot-green.toml`（或 Windows 上的 `%APPDATA%\helix\themes\copilot-green.toml`），修改：
+
+```toml
+[palette]
+ghost_text = "#00FF00"      # 改成你喜欢的颜色
+```
+
+常用颜色：`#00FF00`（亮绿）、`#00FF88`（青绿）、`#00FFFF`（青色）、`#FFFF00`（黄色）
+
+详见 [themes/README.md](themes/README.md)。
+
+
 ## 高级配置
 
 ### 手动指定 Language Server 路径
@@ -233,7 +275,11 @@ cargo check -p helix-term
 
 ### Ghost text 颜色太浅
 
-这是 Helix 主题配置问题。编辑 `%APPDATA%\helix\config.toml`（Windows）或 `~/.config/helix/config.toml`（Linux/macOS）调整主题，或换一个对比度更高的主题。
+**推荐方案：** 使用本仓库提供的 `copilot-green` 主题（见上方"主题配置"章节）。
+
+**手动调整：** 编辑 Helix 配置文件 `%APPDATA%\helix\config.toml`（Windows）或 `~/.config/helix/config.toml`（Linux/macOS），换一个对比度更高的主题，或创建自定义主题。
+
+关键配置项是 `ui.virtual.inlay-hint`，它控制 Ghost Text 的颜色。参考 `themes/copilot-green.toml` 了解如何配置。
 
 ### 补全语言不是中文
 

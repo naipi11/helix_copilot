@@ -1,0 +1,178 @@
+# Author: helix-copilot user
+# 黑底白字绿色 Ghost Text 主题
+# 专为 Copilot 内联补全优化
+
+# 界面颜色
+"ui.background" = { bg = "background" }
+"ui.background.separator" = { fg = "muted" }
+"ui.cursor" = { fg = "background", bg = "cursor" }
+"ui.cursor.normal" = { fg = "background", bg = "cursor" }
+"ui.cursor.insert" = { fg = "background", bg = "green" }
+"ui.cursor.select" = { fg = "background", bg = "blue" }
+"ui.cursor.match" = { fg = "background", bg = "yellow" }
+"ui.cursor.primary" = { fg = "background", bg = "cursor" }
+"ui.cursor.primary.normal" = { fg = "background", bg = "cursor" }
+"ui.cursor.primary.insert" = { fg = "background", bg = "green" }
+"ui.cursor.primary.select" = { fg = "background", bg = "blue" }
+
+"ui.gutter" = { bg = "background" }
+"ui.gutter.selected" = { bg = "line_highlight" }
+"ui.linenr" = { fg = "line_numbers" }
+"ui.linenr.selected" = { fg = "green", modifiers = ["bold"] }
+
+"ui.statusline" = { fg = "foreground", bg = "statusline_bg" }
+"ui.statusline.inactive" = { fg = "muted", bg = "background" }
+"ui.statusline.normal" = { fg = "background", bg = "blue" }
+"ui.statusline.insert" = { fg = "background", bg = "green" }
+"ui.statusline.select" = { fg = "background", bg = "yellow" }
+
+"ui.popup" = { fg = "foreground", bg = "popup_bg" }
+"ui.popup.info" = { fg = "foreground", bg = "popup_bg" }
+"ui.window" = { fg = "muted" }
+"ui.help" = { fg = "foreground", bg = "popup_bg" }
+
+"ui.text" = { fg = "foreground" }
+"ui.text.focus" = { fg = "green", modifiers = ["bold"] }
+"ui.text.inactive" = { fg = "muted" }
+"ui.text.info" = { fg = "foreground" }
+
+# 虚拟文本 - Ghost Text 在这里配置！
+"ui.virtual.ruler" = { bg = "line_highlight" }
+"ui.virtual.whitespace" = { fg = "muted" }
+"ui.virtual.indent-guide" = { fg = "indent_guide" }
+"ui.virtual.inlay-hint" = { fg = "ghost_text", modifiers = ["italic"] }  # Copilot Ghost Text
+"ui.virtual.jump-label" = { fg = "background", bg = "yellow" }
+
+"ui.menu" = { fg = "foreground", bg = "popup_bg" }
+"ui.menu.selected" = { fg = "background", bg = "green" }
+"ui.menu.scroll" = { fg = "muted", bg = "background" }
+
+"ui.selection" = { bg = "selection_bg" }
+"ui.selection.primary" = { bg = "selection_bg" }
+"ui.highlight" = { bg = "line_highlight" }
+"ui.cursorline.primary" = { bg = "line_highlight" }
+"ui.cursorline.secondary" = { bg = "line_highlight" }
+
+# 诊断信息
+"warning" = { fg = "warning" }
+"error" = { fg = "error" }
+"info" = { fg = "info" }
+"hint" = { fg = "hint" }
+"diagnostic" = { modifiers = ["underlined"] }
+"diagnostic.hint" = { fg = "hint", modifiers = ["underlined"] }
+"diagnostic.info" = { fg = "info", modifiers = ["underlined"] }
+"diagnostic.warning" = { fg = "warning", modifiers = ["underlined"] }
+"diagnostic.error" = { fg = "error", modifiers = ["underlined"] }
+"diagnostic.unnecessary" = { fg = "muted", modifiers = ["dim"] }
+
+# 语法高亮
+"comment" = { fg = "comment", modifiers = ["italic"] }
+"constant" = { fg = "cyan" }
+"constant.character" = { fg = "green" }
+"constant.character.escape" = { fg = "yellow" }
+"constant.numeric" = { fg = "cyan" }
+"constant.builtin" = { fg = "cyan" }
+
+"string" = { fg = "green" }
+"string.regexp" = { fg = "yellow" }
+"string.special" = { fg = "yellow" }
+
+"type" = { fg = "blue" }
+"type.builtin" = { fg = "blue" }
+"type.enum" = { fg = "blue" }
+"type.parameter" = { fg = "cyan" }
+
+"constructor" = { fg = "blue" }
+"function" = { fg = "yellow" }
+"function.builtin" = { fg = "yellow" }
+"function.method" = { fg = "yellow" }
+"function.macro" = { fg = "magenta" }
+
+"variable" = { fg = "foreground" }
+"variable.builtin" = { fg = "cyan" }
+"variable.parameter" = { fg = "foreground" }
+"variable.other.member" = { fg = "foreground" }
+
+"keyword" = { fg = "magenta" }
+"keyword.control" = { fg = "magenta" }
+"keyword.control.conditional" = { fg = "magenta" }
+"keyword.control.repeat" = { fg = "magenta" }
+"keyword.control.import" = { fg = "magenta" }
+"keyword.control.return" = { fg = "magenta" }
+"keyword.control.exception" = { fg = "magenta" }
+"keyword.operator" = { fg = "magenta" }
+"keyword.directive" = { fg = "magenta" }
+"keyword.function" = { fg = "magenta" }
+"keyword.storage" = { fg = "magenta" }
+"keyword.storage.type" = { fg = "magenta" }
+"keyword.storage.modifier" = { fg = "magenta" }
+
+"operator" = { fg = "magenta" }
+"punctuation" = { fg = "foreground" }
+"punctuation.delimiter" = { fg = "foreground" }
+"punctuation.bracket" = { fg = "foreground" }
+"punctuation.special" = { fg = "red" }
+
+"tag" = { fg = "red" }
+"attribute" = { fg = "cyan" }
+"namespace" = { fg = "blue" }
+"module" = { fg = "blue" }
+"special" = { fg = "red" }
+
+# Markdown
+"markup.heading" = { fg = "red", modifiers = ["bold"] }
+"markup.heading.marker" = { fg = "red" }
+"markup.list" = { fg = "yellow" }
+"markup.list.marker" = { fg = "red" }
+"markup.bold" = { fg = "cyan", modifiers = ["bold"] }
+"markup.italic" = { fg = "yellow", modifiers = ["italic"] }
+"markup.strikethrough" = { modifiers = ["crossed_out"] }
+"markup.link.url" = { fg = "blue", modifiers = ["underlined"] }
+"markup.link.text" = { fg = "cyan" }
+"markup.quote" = { fg = "comment", modifiers = ["italic"] }
+"markup.raw" = { fg = "green" }
+"markup.raw.block" = { fg = "green" }
+
+# Diff
+"diff.plus" = { fg = "diff_add" }
+"diff.minus" = { fg = "diff_delete" }
+"diff.delta" = { fg = "diff_change" }
+
+# 调色板
+[palette]
+# 主色调
+background = "#000000"      # 纯黑背景
+foreground = "#FFFFFF"      # 纯白前景
+cursor = "#FFFFFF"          # 白色光标
+
+# UI 颜色
+line_highlight = "#1a1a1a"  # 当前行高亮（深灰）
+selection_bg = "#333333"    # 选中背景（灰）
+line_numbers = "#666666"    # 行号（中灰）
+muted = "#808080"           # 静音文本（灰）
+popup_bg = "#0a0a0a"        # 弹窗背景（接近黑）
+statusline_bg = "#1a1a1a"   # 状态栏背景
+indent_guide = "#333333"    # 缩进参考线
+
+# Ghost Text - 最重要的配置！
+ghost_text = "#00FF00"      # 亮绿色 Ghost Text（Copilot 补全）
+
+# 语法高亮颜色
+comment = "#808080"         # 注释（灰）
+green = "#00FF00"           # 绿色（字符串、Ghost Text）
+yellow = "#FFFF00"          # 黄色（函数）
+blue = "#00BFFF"            # 蓝色（类型）
+cyan = "#00FFFF"            # 青色（常量）
+magenta = "#FF00FF"         # 品红（关键字）
+red = "#FF0000"             # 红色（标签、特殊）
+
+# 诊断颜色
+error = "#FF0000"           # 错误（红）
+warning = "#FFA500"         # 警告（橙）
+info = "#00BFFF"            # 信息（蓝）
+hint = "#808080"            # 提示（灰）
+
+# Diff 颜色
+diff_add = "#00FF00"        # 新增（绿）
+diff_delete = "#FF0000"     # 删除（红）
+diff_change = "#FFFF00"     # 修改（黄）
