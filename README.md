@@ -2,7 +2,6 @@
 
 `helix-copilot` 为打了补丁的 Helix 编辑器提供 GitHub Copilot 支持，支持原生 ghost text（幽灵文本）/ 内联补全。
 
-本仓库由 `naipi11` GitHub 账号维护。
 
 ## 上游 Helix
 
