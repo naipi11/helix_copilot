@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 const DefaultModel = "gpt-5.4-mini"
@@ -13,6 +14,12 @@ const DefaultLanguageServerPackage = "@github/copilot-language-server"
 type Config struct {
 	Model                 string `json:"model"`
 	LanguageServerPackage string `json:"languageServerPackage"`
+	// LanguageServerJSPath, when non-empty, pins an absolute path to the
+	// Copilot language server entry script (typically
+	// .../@github/copilot-language-server/dist/language-server.js).
+	// When set, the launcher invokes it directly via node and skips
+	// auto-discovery / npx fallback. Empty means "auto-detect".
+	LanguageServerJSPath string `json:"languageServerJSPath,omitempty"`
 }
 
 func Defaults() Config {
@@ -20,6 +27,14 @@ func Defaults() Config {
 }
 
 func DefaultPath() string {
+	if runtime.GOOS == "windows" {
+		// On Windows, prefer %APPDATA% (which Helix itself uses) so the
+		// helix-copilot config sits next to the Helix config tree. This
+		// matches defaultHelixConfigDir() in cmd/helix-copilot/main.go.
+		if appData := os.Getenv("APPDATA"); appData != "" {
+			return filepath.Join(appData, "helix-copilot", "config.json")
+		}
+	}
 	base := os.Getenv("XDG_CONFIG_HOME")
 	if base == "" {
 		base = filepath.Join(os.Getenv("HOME"), ".config")

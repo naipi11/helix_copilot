@@ -13,6 +13,7 @@ import (
 	"github.com/naipi11/helix_copilot/internal/helixconfig"
 	"github.com/naipi11/helix_copilot/internal/login"
 	"github.com/naipi11/helix_copilot/internal/lsp"
+	"github.com/naipi11/helix_copilot/internal/proxylog"
 )
 
 var stdout io.Writer = os.Stdout
@@ -162,8 +163,14 @@ func runLSP(args []string) int {
 		fmt.Fprintf(stderr, "unknown lsp option: %s\n", strings.Join(args, " "))
 		return 2
 	}
+	logger := proxylog.New()
+	defer logger.Close()
+	logger.Printf("helix-copilot lsp starting | os=%s arch=%s | log=%s",
+		runtime.GOOS, runtime.GOARCH, logger.Path())
 	proxy := lsp.NewProxy()
+	proxy.SetLogger(logger)
 	if err := proxy.Run(); err != nil {
+		logger.Printf("proxy.Run returned error: %v", err)
 		fmt.Fprintf(stderr, "copilot lsp proxy: %v\n", err)
 		return 1
 	}

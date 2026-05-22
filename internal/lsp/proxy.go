@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/naipi11/helix_copilot/internal/config"
+	"github.com/naipi11/helix_copilot/internal/proxylog"
 )
 
 // Proxy bridges Helix LSP (stdin/stdout) to Copilot language server.
@@ -22,6 +23,7 @@ type Proxy struct {
 	childOut    io.ReadCloser
 	childErr    io.ReadCloser
 	helixReader *bufio.Reader
+	log         *proxylog.Logger
 
 	mu        sync.Mutex
 	idMapping map[int]json.RawMessage // inlineCompletion ID → original completion ID
@@ -34,12 +36,27 @@ func NewProxy() *Proxy {
 	return &Proxy{
 		idMapping: make(map[int]json.RawMessage),
 		nextID:    10000,
+		log:       &proxylog.Logger{}, // no-op default; main wires a real one
 	}
 }
 
+// SetLogger attaches a diagnostic logger. Passing nil resets to a no-op.
+func (p *Proxy) SetLogger(l *proxylog.Logger) {
+	if l == nil {
+		l = &proxylog.Logger{}
+	}
+	p.log = l
+}
+
 func (p *Proxy) Run() error {
-	cmdArgs := []string{"--yes", config.DefaultLanguageServerPackage, "--stdio"}
-	cmd := exec.Command("npx", cmdArgs...)
+	cfg, err := config.Load(config.DefaultPath())
+	if err != nil {
+		// Non-fatal: fall back to defaults so a broken config file doesn't
+		// block completion entirely. The error is logged for diagnosis.
+		p.log.Printf("proxy: load config failed (%v); using defaults", err)
+		cfg = config.Defaults()
+	}
+	cmd := BuildChildCommand(cfg, p.log)
 
 	childIn, err := cmd.StdinPipe()
 	if err != nil {
@@ -55,8 +72,10 @@ func (p *Proxy) Run() error {
 	}
 
 	if err := cmd.Start(); err != nil {
+		p.log.Printf("proxy: start child failed: %v", err)
 		return fmt.Errorf("start copilot LS: %w", err)
 	}
+	p.log.Printf("proxy: child started pid=%d argv=%v", cmd.Process.Pid, cmd.Args)
 
 	p.childCmd = cmd
 	p.childIn = childIn
@@ -64,9 +83,10 @@ func (p *Proxy) Run() error {
 	p.childErr = childErr
 	p.helixReader = bufio.NewReader(os.Stdin)
 
-	// Forward child stderr to our stderr
+	// Tee child stderr into both our stderr (for users running outside Helix)
+	// and the log file (which is where Helix users will actually look).
 	go func() {
-		_, _ = io.Copy(os.Stderr, childErr)
+		_, _ = io.Copy(io.MultiWriter(os.Stderr, p.log.Tee("[copilot-ls-stderr]")), childErr)
 	}()
 
 	// Signal channel for goroutine lifecycle
@@ -105,6 +125,7 @@ func (p *Proxy) forwardHelixToChild() error {
 			}
 			if err := p.handleCompletionRequest(msg); err != nil {
 				fmt.Fprintf(os.Stderr, "completion bridge error: %v\n", err)
+				p.log.Printf("proxy: completion bridge error: %v", err)
 				// Fallback: forward as-is
 				if err := writeLSP(p.childIn, msg); err != nil {
 					return err
@@ -127,6 +148,7 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 				return
 			}
 			fmt.Fprintf(os.Stderr, "read from child: %v\n", err)
+			p.log.Printf("proxy: read from child failed: %v", err)
 			return
 		}
 
@@ -144,6 +166,7 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 				modified := p.rewriteInlineResponseAsCompletion(msg, origID)
 				if err := writeLSP(os.Stdout, modified); err != nil {
 					fmt.Fprintf(os.Stderr, "write to helix: %v\n", err)
+					p.log.Printf("proxy: write to helix (inline rewrite) failed: %v", err)
 					return
 				}
 				continue
@@ -153,9 +176,11 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 			initResp, isInit := p.tryParseInitResponse(msg)
 			if isInit {
 				p.ready = true
+				p.log.Printf("proxy: copilot LS initialize response received, completion is now ready")
 				modified := injectCompletionProvider(initResp)
 				if err := writeLSP(os.Stdout, modified); err != nil {
 					fmt.Fprintf(os.Stderr, "write to helix: %v\n", err)
+					p.log.Printf("proxy: write to helix (init response) failed: %v", err)
 					return
 				}
 				continue
@@ -165,6 +190,7 @@ func (p *Proxy) forwardChildToHelix(done chan struct{}) {
 		// Forward unchanged
 		if err := writeLSP(os.Stdout, msg); err != nil {
 			fmt.Fprintf(os.Stderr, "write to helix: %v\n", err)
+			p.log.Printf("proxy: write to helix (passthrough) failed: %v", err)
 			return
 		}
 	}
