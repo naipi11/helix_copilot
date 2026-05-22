@@ -38,3 +38,19 @@ echo "Installed helix-copilot to $BIN_DIR"
 if ! command -v node >/dev/null 2>&1; then
   echo "warning: Node.js is required for @github/copilot-language-server" >&2
 fi
+
+# Install copilot-green theme
+HELIX_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/helix"
+THEME_DIR="$HELIX_CONFIG_DIR/themes"
+if [ -f "$tmp/themes/copilot-green.toml" ]; then
+  mkdir -p "$THEME_DIR"
+  cp "$tmp/themes/copilot-green.toml" "$THEME_DIR/copilot-green.toml"
+  echo ""
+  echo "✓ Installed copilot-green theme to $THEME_DIR"
+  echo ""
+  echo "To enable the theme (recommended for better Ghost Text visibility):"
+  echo "  1. Edit $HELIX_CONFIG_DIR/config.toml"
+  echo "  2. Add at the top: theme = \"copilot-green\""
+  echo "  3. Restart Helix or run :reload-config"
+  echo ""
+fi

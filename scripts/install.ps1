@@ -28,6 +28,23 @@ try {
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Write-Warning "Node.js is required for @github/copilot-language-server"
   }
+
+  # Install copilot-green theme
+  $HelixConfigDir = Join-Path $env:APPDATA "helix"
+  $ThemeDir = Join-Path $HelixConfigDir "themes"
+  $ThemeFile = Join-Path $Tmp "themes\copilot-green.toml"
+  if (Test-Path $ThemeFile) {
+    New-Item -ItemType Directory -Force -Path $ThemeDir | Out-Null
+    Copy-Item -Path $ThemeFile -Destination (Join-Path $ThemeDir "copilot-green.toml") -Force
+    Write-Host ""
+    Write-Host "✓ Installed copilot-green theme to $ThemeDir" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "To enable the theme (recommended for better Ghost Text visibility):"
+    Write-Host "  1. Edit $(Join-Path $HelixConfigDir 'config.toml')"
+    Write-Host "  2. Add at the top: theme = `"copilot-green`""
+    Write-Host "  3. Restart Helix or run :reload-config"
+    Write-Host ""
+  }
 } finally {
   Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue
 }
