@@ -21,9 +21,9 @@ jobs:
           - os: windows-latest
             asset_os: windows
             asset_arch: amd64
-          - os: macos-13
+          - os: macos-latest
             asset_os: darwin
-            asset_arch: amd64
+            asset_arch: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
