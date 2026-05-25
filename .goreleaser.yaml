@@ -38,4 +38,4 @@ release:
   github:
     owner: naipi11
     name: helix_copilot
-  draft: true
+  draft: false
