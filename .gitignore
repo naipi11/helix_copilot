@@ -4,3 +4,5 @@
 *.test
 .DS_Store
 .aider*
+hx-artifacts/
+hx-assets/
