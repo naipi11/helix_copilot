@@ -25,7 +25,7 @@ archives:
       - goos: windows
         formats: [zip]
     files:
-      - src: "hx-assets/{{ .Os }}_{{ .Arch }}/hx{{ .Ext }}"
+      - src: "hx-assets/{{ .Os }}_{{ .Arch }}/hx*"
         dst: "."
       - src: "helix/runtime/**/*"
         dst: "runtime"
